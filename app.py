@@ -336,9 +336,10 @@ def set_username():
     return redirect(url_for("index"))
 
 
-# ── OTP SEND ─────────────────────────────────
 @app.route("/send-otp", methods=["POST"])
 def send_otp():
+    import threading
+
     email = request.form.get("email", "").strip().lower()
     if not email:
         flash("Please enter a valid email.", "error")
@@ -352,18 +353,26 @@ def send_otp():
 
     print(f"\n{'='*40}\n  OTP for {email}  -->  {otp}\n{'='*40}\n")
 
-    try:
-        msg = Message(
-            subject    = "Your Daily Drape OTP",
-            recipients = [email],
-            body       = f"Hi,\n\nYour Daily Drape OTP is: {otp}\n\nValid for 10 minutes.\n\n– Daily Drape Team"
-        )
-        mail.send(msg)
-        print("✅ Email sent successfully!")
-    except Exception as e:
-        app.logger.error(f"Mail error: {e}")
-        print(f"❌ Email failed: {e}")
-        flash(f"OTP generated but email failed. Check terminal. Error: {e}", "warning")
+    # ── send email in background so gunicorn never times out ──
+    def send_async_email(app_ctx, msg_data):
+        with app_ctx:
+            try:
+                msg = Message(
+                    subject    = "Your Daily Drape OTP",
+                    recipients = [msg_data["to"]],
+                    body       = f"Hi,\n\nYour Daily Drape OTP is: {msg_data['otp']}\n\nValid for 10 minutes.\n\n– Daily Drape Team"
+                )
+                mail.send(msg)
+                print("✅ Email sent successfully!")
+            except Exception as e:
+                print(f"❌ Email failed: {e}")
+
+    thread = threading.Thread(
+        target=send_async_email,
+        args=(app.app_context(), {"to": email, "otp": otp})
+    )
+    thread.daemon = True
+    thread.start()
 
     dev_otp = otp if app.debug else None
     return render_template("verify.html", dev_otp=dev_otp)
