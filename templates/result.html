@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Look - Daily Drape</title>
+
+<style>
+:root{
+  --ink:#0c0a09; --ink-2:#16130f; --rule:rgba(245,240,230,0.1);
+  --coral:#e3613f; --gold:#c9a876; --paper:#f5f0e6;
+  --paper-dim:rgba(245,240,230,0.55); --paper-faint:rgba(245,240,230,0.18);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#0c0a09;color:var(--paper);min-height:100vh}
+.grid-bg{position:fixed;inset:0;background-image:linear-gradient(rgba(245,240,230,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(245,240,230,.025) 1px,transparent 1px);background-size:60px 60px}
+
+.navbar{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;padding:1rem 2rem;background:rgba(12,10,9,.85);border-bottom:1px solid var(--rule)}
+.logo{display:flex;gap:.6rem;align-items:center;text-decoration:none;color:var(--paper)}
+.logo-mark{font-size:.7rem;color:var(--coral);border:1px solid var(--coral);padding:.15rem .35rem;border-radius:4px}
+.logo-text{font-size:1.45rem;font-weight:700}
+.nav-right{display:flex;gap:.7rem;flex-wrap:wrap}
+.nav-pill{color:var(--paper-dim);text-decoration:none;border:1px solid var(--rule);border-radius:100px;padding:.5rem 1rem;font-weight:600}
+
+.page{position:relative;z-index:1;max-width:820px;margin:0 auto;padding:3rem 1.2rem 5rem}
+.result-header{text-align:center;margin-bottom:1.5rem}
+.result-kicker{display:inline-block;color:var(--gold);border:1px solid rgba(201,168,118,.25);border-radius:100px;padding:.35rem .9rem;font-size:.75rem;margin-bottom:1rem}
+.result-title{font-size:clamp(2rem,5vw,3rem);margin-bottom:.5rem}
+.result-title em{color:var(--coral)}
+.result-sub{color:var(--paper-dim)}
+
+.criteria-row{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap;margin-bottom:2rem}
+.chip{border:1px solid var(--rule);border-radius:100px;padding:.4rem .9rem;text-transform:capitalize;color:var(--paper-dim)}
+.chip.gender{color:var(--coral)}
+.chip.weather{color:var(--gold)}
+
+.outfit-card{
+  background:var(--ink-2);
+  border:1px solid var(--rule);
+  border-radius:24px;
+  overflow:hidden;
+  margin-bottom:1.5rem;
+  box-shadow:0 24px 64px rgba(0,0,0,.45);
+  display:flex;
+  flex-direction:column;
+}
+
+.outfit-image{
+  width:100%;
+  max-width:520px;
+  aspect-ratio:3/4;
+  margin:0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+  border-bottom:1px solid var(--rule);
+  overflow:hidden;
+  cursor:zoom-in;
+  background:linear-gradient(135deg,rgba(22,19,15,.9),rgba(227,97,63,.07),rgba(201,168,118,.06));
+}
+
+.outfit-image img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  object-position:center;
+  display:block;
+  image-rendering:auto;
+}
+
+.img-loading{
+  position:absolute;
+  inset:0;
+  z-index:2;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  background:var(--ink-2);
+}
+.img-loading-spinner{width:36px;height:36px;border:2px solid var(--rule);border-top-color:var(--coral);border-radius:50%;animation:spin .8s linear infinite}
+.img-loading-text{margin-top:.8rem;color:var(--paper-dim);font-size:.75rem}
+.image-badge{position:absolute;top:1rem;right:1rem;z-index:3;background:rgba(12,10,9,.8);border:1px solid var(--rule);border-radius:100px;padding:.3rem .8rem;font-size:.7rem}
+.zoom-hint{position:absolute;bottom:.8rem;left:50%;transform:translateX(-50%);background:rgba(12,10,9,.75);border:1px solid var(--rule);border-radius:100px;padding:.3rem .8rem;font-size:.7rem;color:var(--paper-dim)}
+
+.outfit-pieces{padding:2rem}
+.pieces-label{font-size:.75rem;color:var(--paper-faint);letter-spacing:.1em;text-transform:uppercase;margin-bottom:1rem}
+.pieces-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.piece-item{text-align:center;border:1px solid var(--rule);border-radius:14px;padding:1.2rem 1rem;background:rgba(245,240,230,.04)}
+.piece-emoji{font-size:1.8rem;margin-bottom:.5rem}
+.piece-label{font-size:.7rem;color:var(--paper-faint);text-transform:uppercase;margin-bottom:.4rem}
+.piece-name{font-weight:700;line-height:1.35}
+.piece-name.empty{color:var(--paper-faint);font-style:italic}
+
+.action-bar{display:flex;gap:.8rem;padding:1.2rem 2rem 2rem;border-top:1px solid var(--rule)}
+.btn-like,.btn-alt,.btn-new{flex:1;border-radius:12px;padding:.9rem 1rem;font-weight:700;text-align:center;cursor:pointer;text-decoration:none}
+.btn-like,.btn-alt{background:transparent;color:var(--paper-dim);border:1px solid var(--rule)}
+.btn-like.liked{color:var(--coral);border-color:var(--coral)}
+.btn-new{background:var(--paper);color:var(--ink);border:none}
+
+.feedback-section{
+  background:var(--ink-2);
+  border:1px solid var(--rule);
+  border-radius:24px;
+  padding:2rem;
+  margin-top:1.5rem;
+}
+.feedback-heading{font-size:1.4rem;margin-bottom:.4rem}
+.feedback-sub{color:var(--paper-dim);margin-bottom:1.3rem}
+.stars-row{display:flex;gap:.4rem;margin-bottom:1.2rem}
+.star{font-size:2rem;color:var(--rule);cursor:pointer}
+.star.active,.star.hover{color:#f9c74f}
+.input-row{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem}
+.fb-input,.fb-textarea{width:100%;background:rgba(245,240,230,.04);border:1px solid var(--rule);border-radius:12px;padding:.9rem 1rem;color:var(--paper);font-size:1rem}
+.fb-textarea{min-height:100px;resize:vertical;margin-bottom:1rem}
+.btn-feedback{background:var(--paper);color:var(--ink);border:none;border-radius:12px;padding:.9rem 2rem;font-weight:800;cursor:pointer}
+.feedback-success{display:none;color:#7fd88a;margin-bottom:1rem}
+
+.lightbox{position:fixed;inset:0;z-index:999;background:rgba(12,10,9,.96);display:none;align-items:center;justify-content:center}
+.lightbox.open{display:flex}
+.lightbox-img{max-width:92vw;max-height:92vh;object-fit:contain;border-radius:16px}
+.lightbox-close{position:fixed;top:1rem;right:1rem;width:42px;height:42px;border-radius:50%;border:1px solid var(--rule);background:#16130f;color:var(--paper);cursor:pointer}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:650px){
+  .navbar{
+    padding:.8rem 1rem;
+    align-items:flex-start;
+    gap:.8rem;
+  }
+
+  .page{
+    padding:2rem 1rem 4rem;
+  }
+
+  .outfit-image{
+    max-width:100%;
+  }
+
+  .pieces-grid{
+    grid-template-columns:1fr;
+  }
+
+  .action-bar{
+    flex-direction:column;
+  }
+
+  .input-row{
+    grid-template-columns:1fr;
+  }
+
+  .nav-right{
+    gap:.4rem;
+  }
+
+  .nav-pill{
+    padding:.45rem .7rem;
+    font-size:.85rem;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="grid-bg"></div>
+
+<div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+  <img class="lightbox-img" id="lightboxImg" src="" alt="Outfit full view">
+  <button class="lightbox-close" onclick="closeLightboxBtn()">X</button>
+</div>
+
+<nav class="navbar">
+  <a class="logo" href="/">
+    <span class="logo-mark">DD</span>
+    <span class="logo-text">Daily Drape</span>
+  </a>
+  <div class="nav-right">
+    <a href="/favorites" class="nav-pill">Favorites</a>
+    <a href="/feedback-page" class="nav-pill">Feedback</a>
+    <a href="/" class="nav-pill">New Look</a>
+    <a href="/logout" class="nav-pill">Sign out</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="result-header">
+    <div class="result-kicker">YOUR LOOK IS READY</div>
+    <h1 class="result-title">Here's your <em>perfect</em> outfit</h1>
+    <p class="result-sub">Curated for today's conditions</p>
+  </div>
+
+  <div class="criteria-row">
+    <span class="chip gender">{{ criteria.gender }}</span>
+    <span class="chip weather">{{ criteria.weather }}</span>
+    <span class="chip occasion">{{ criteria.occasion }}</span>
+  </div>
+
+  <div class="outfit-card" id="outfitCard">
+    <div class="outfit-image" id="outfitImageZone" onclick="openLightbox()">
+      {% if image %}
+        <div class="img-loading" id="imgLoadingState">
+          <div class="img-loading-spinner"></div>
+          <div class="img-loading-text">Loading outfit...</div>
+        </div>
+        <img id="outfitImg" src="{{ image }}" alt="Outfit image" decoding="async" fetchpriority="high" onload="onImageLoad()" onerror="onImageError()">
+        <span class="image-badge" id="imgBadge">{{ 'Your Photo' if is_uploaded else 'AI Generated' }}</span>
+        <span class="zoom-hint">Click to zoom</span>
+      {% else %}
+        <div class="no-image">Outfit Preview</div>
+      {% endif %}
+    </div>
+
+    <div class="outfit-pieces">
+      <div class="pieces-label">Your Complete Look</div>
+      <div class="pieces-grid">
+        <div class="piece-item">
+          <div class="piece-emoji">👕</div>
+          <div class="piece-label">Top</div>
+          <div class="piece-name" id="topName">{{ outfit.top }}</div>
+        </div>
+        <div class="piece-item">
+          <div class="piece-emoji">👖</div>
+          <div class="piece-label">Bottom</div>
+          <div class="piece-name {% if outfit.bottom == '-' or outfit.bottom == '–' %}empty{% endif %}" id="bottomName">{{ outfit.bottom }}</div>
+        </div>
+        <div class="piece-item">
+          <div class="piece-emoji">👟</div>
+          <div class="piece-label">Shoes</div>
+          <div class="piece-name" id="shoesName">{{ outfit.shoes }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="action-bar">
+      <button class="btn-like {% if is_liked %}liked{% endif %}" id="likeBtn" onclick="toggleLike()">
+        <span id="likeIcon">{% if is_liked %}♥{% else %}♡{% endif %}</span>
+        <span id="likeLabel">{% if is_liked %}Saved{% else %}Save Look{% endif %}</span>
+      </button>
+      <button class="btn-alt" id="altBtn" onclick="loadAlternative()">↻ Try Alternative</button>
+      <a href="/" class="btn-new">New Look</a>
+    </div>
+  </div>
+
+  <div class="feedback-section">
+    <h3 class="feedback-heading">Rate this look</h3>
+    <p class="feedback-sub">Your feedback helps us style better outfits for you.</p>
+
+    <div class="stars-row">
+      <span class="star" data-val="1" onclick="setRating(1)">★</span>
+      <span class="star" data-val="2" onclick="setRating(2)">★</span>
+      <span class="star" data-val="3" onclick="setRating(3)">★</span>
+      <span class="star" data-val="4" onclick="setRating(4)">★</span>
+      <span class="star" data-val="5" onclick="setRating(5)">★</span>
+    </div>
+
+    <div class="input-row">
+      <input class="fb-input" type="text" id="fbName" placeholder="Your name (optional)">
+      <input class="fb-input" type="tel" id="fbPhone" placeholder="Phone (optional)">
+    </div>
+
+    <textarea class="fb-textarea" id="fbComments" placeholder="Tell us what you think about this outfit..."></textarea>
+    <div id="feedbackSuccess" class="feedback-success">Thanks for your feedback!</div>
+    <button class="btn-feedback" onclick="submitFeedback()">Submit Feedback</button>
+  </div>
+</div>
+
+<script>
+var currentOutfitId = {{ outfit.id }};
+var occasion = {{ criteria.occasion|tojson }};
+var weather = {{ criteria.weather|tojson }};
+var gender = {{ criteria.gender|tojson }};
+var isLiked = {{ 'true' if is_liked else 'false' }};
+var rating = 0;
+var currentImgSrc = {{ image|tojson }};
+
+function onImageLoad(){
+  var loader = document.getElementById('imgLoadingState');
+  var img = document.getElementById('outfitImg');
+  if(loader) loader.style.display = 'none';
+  if(img) currentImgSrc = img.src;
+}
+
+function onImageError(){
+  var loader = document.getElementById('imgLoadingState');
+  if(loader) loader.innerHTML = '<div>Image failed to load</div>';
+}
+
+function openLightbox(){
+  if(!currentImgSrc) return;
+  document.getElementById('lightboxImg').src = currentImgSrc;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox(e){
+  if(e && e.target !== document.getElementById('lightbox')) return;
+  document.getElementById('lightbox').classList.remove('open');
+}
+function closeLightboxBtn(){
+  document.getElementById('lightbox').classList.remove('open');
+}
+
+function toggleLike(){
+  var fd = new FormData();
+  fd.append('outfit_id', currentOutfitId);
+  fetch('/like',{method:'POST',body:fd})
+    .then(r=>r.json())
+    .then(d=>{
+      isLiked = d.liked;
+      document.getElementById('likeIcon').textContent = d.liked ? '♥' : '♡';
+      document.getElementById('likeLabel').textContent = d.liked ? 'Saved' : 'Save Look';
+      document.getElementById('likeBtn').classList.toggle('liked', d.liked);
+    });
+}
+
+function loadAlternative(){
+  var btn = document.getElementById('altBtn');
+  btn.textContent = 'Finding...';
+
+  var fd = new FormData();
+  fd.append('outfit_id', currentOutfitId);
+  fd.append('occasion', occasion);
+  fd.append('weather', weather);
+  fd.append('gender', gender);
+
+  fetch('/alternative',{method:'POST',body:fd})
+    .then(r=>r.json())
+    .then(d=>{
+      currentOutfitId = d.outfit_id;
+      currentImgSrc = d.image;
+
+      document.getElementById('topName').textContent = d.top;
+      document.getElementById('bottomName').textContent = d.bottom || '-';
+      document.getElementById('shoesName').textContent = d.shoes;
+
+      document.getElementById('likeBtn').classList.remove('liked');
+      document.getElementById('likeIcon').textContent = '♡';
+      document.getElementById('likeLabel').textContent = 'Save Look';
+
+      if(d.image){
+        document.getElementById('outfitImageZone').innerHTML =
+          '<div class="img-loading" id="imgLoadingState"><div class="img-loading-spinner"></div><div class="img-loading-text">Loading outfit...</div></div>' +
+          '<img id="outfitImg" src="' + d.image + '" alt="Outfit image" onload="onImageLoad()" onerror="onImageError()">' +
+          '<span class="image-badge" id="imgBadge">' + (d.is_uploaded ? 'Your Photo' : 'AI Generated') + '</span>' +
+          '<span class="zoom-hint">Click to zoom</span>';
+      }
+
+      btn.textContent = '↻ Try Alternative';
+    })
+    .catch(()=>btn.textContent = '↻ Try Alternative');
+}
+
+function setRating(val){
+  rating = val;
+  document.querySelectorAll('.star').forEach((s,i)=>{
+    s.classList.toggle('active', i < val);
+  });
+}
+
+function submitFeedback(){
+  if(!rating){ alert('Please select a rating first.'); return; }
+
+  var fd = new FormData();
+  fd.append('outfit_id', currentOutfitId);
+  fd.append('rating', rating);
+  fd.append('name', document.getElementById('fbName').value);
+  fd.append('phone', document.getElementById('fbPhone').value);
+  fd.append('comments', document.getElementById('fbComments').value);
+
+  fetch('/feedback',{method:'POST',body:fd})
+    .then(r=>r.json())
+    .then(d=>{
+      if(d.success){
+        document.getElementById('feedbackSuccess').style.display = 'block';
+        document.querySelector('.btn-feedback').style.display = 'none';
+      }
+    });
+}
+</script>
+</body>
+</html>

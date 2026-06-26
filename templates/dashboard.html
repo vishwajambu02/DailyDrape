@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Drape — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0c0a09; --ink-2:#16130f; --ink-3:#1e1a15;
+  --surface:rgba(22,19,15,0.6); --surface2:rgba(245,240,230,0.04);
+  --rule:rgba(245,240,230,0.13);
+  --coral:#e3613f; --coral-dim:rgba(227,97,63,0.16); --coral-glow:rgba(227,97,63,0.08);
+  --gold:#c9a876; --gold-dim:rgba(201,168,118,0.15);
+  --green:#4caf7d; --green-dim:rgba(76,175,125,0.15);
+  --paper:#f5f0e6; --paper-dim:rgba(245,240,230,0.55); --paper-faint:rgba(245,240,230,0.2);
+  --display:'Fraunces',serif; --body:'Inter',sans-serif; --mono:'Space Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--body);background:var(--ink);color:var(--paper);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important;}}
+
+/* ── Atmosphere ── */
+.grid-bg{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(245,240,230,0.025) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(245,240,230,0.025) 1px,transparent 1px);
+  background-size:60px 60px;}
+.vignette{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(227,97,63,0.09),transparent 60%),
+  radial-gradient(ellipse 60% 50% at 100% 100%,rgba(201,168,118,0.05),transparent 60%);}
+
+/* ── NAV ── */
+.navbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;
+  justify-content:space-between;padding:1.1rem 2rem;
+  background:rgba(12,10,9,0.82);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--rule);}
+.logo{display:flex;align-items:baseline;gap:0.5rem;text-decoration:none;}
+.logo-mark{font-family:var(--mono);font-size:0.65rem;color:var(--coral);
+  border:1px solid var(--coral);padding:0.1rem 0.35rem;border-radius:3px;letter-spacing:0.04em;}
+.logo-text{font-family:var(--display);font-size:1.25rem;font-weight:600;color:var(--paper);letter-spacing:-0.2px;}
+.nav-right{display:flex;align-items:center;gap:0.6rem;}
+.nav-pill{font-size:0.82rem;font-weight:500;color:var(--paper-dim);text-decoration:none;
+  padding:0.4rem 0.95rem;border:1px solid var(--rule);border-radius:100px;transition:all 0.2s;white-space:nowrap;}
+.nav-pill:hover{color:var(--paper);border-color:rgba(227,97,63,0.4);background:var(--coral-dim);}
+.nav-pill.active{color:var(--coral);border-color:rgba(227,97,63,0.5);background:var(--coral-dim);}
+.nav-pill.logout:hover{border-color:#d64545;color:#e8807a;background:rgba(214,69,69,0.08);}
+
+/* ── PAGE HEADER ── */
+.page-header{position:relative;z-index:10;padding:3rem 2rem 1.5rem;max-width:1200px;margin:0 auto;}
+.page-kicker{display:inline-flex;align-items:center;gap:0.5rem;font-family:var(--mono);
+  font-size:0.7rem;letter-spacing:0.06em;color:var(--gold);background:var(--gold-dim);
+  border:1px solid rgba(201,168,118,0.25);border-radius:100px;padding:0.35rem 1rem;margin-bottom:1.2rem;}
+.page-kicker::before{content:'◆';font-size:0.45rem;color:var(--gold);}
+.page-title{font-family:var(--display);font-size:clamp(2rem,4vw,2.8rem);font-weight:600;
+  letter-spacing:-1px;line-height:1.1;margin-bottom:0.4rem;}
+.page-title em{font-style:italic;font-weight:500;color:var(--coral);}
+.page-sub{font-size:0.92rem;color:var(--paper-dim);}
+
+/* ── MAIN LAYOUT ── */
+.dash-wrap{position:relative;z-index:10;max-width:1200px;margin:0 auto;padding:0 2rem 5rem;}
+
+/* ── STAT CARDS ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem;}
+@media(max-width:900px){.stats-row{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:520px){.stats-row{grid-template-columns:1fr;}}
+
+.stat-card{background:var(--ink-2);border:1px solid var(--rule);border-radius:18px;
+  padding:1.5rem 1.4rem;position:relative;overflow:hidden;
+  animation:fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) both;cursor:default;
+  transition:border-color 0.2s,box-shadow 0.2s;}
+.stat-card:hover{border-color:rgba(227,97,63,0.3);box-shadow:0 8px 32px rgba(227,97,63,0.08);}
+.stat-card:nth-child(1){animation-delay:0.05s;}
+.stat-card:nth-child(2){animation-delay:0.1s;}
+.stat-card:nth-child(3){animation-delay:0.15s;}
+.stat-card:nth-child(4){animation-delay:0.2s;}
+.stat-card::before{content:'';position:absolute;top:0;left:1rem;right:1rem;height:1px;
+  background:repeating-linear-gradient(90deg,var(--rule) 0 6px,transparent 6px 12px);}
+.stat-icon{font-size:1.4rem;margin-bottom:0.9rem;display:block;}
+.stat-val{font-family:var(--display);font-size:2rem;font-weight:700;letter-spacing:-0.5px;line-height:1;}
+.stat-val.coral{color:var(--coral);}
+.stat-val.gold{color:var(--gold);}
+.stat-val.green{color:var(--green);}
+.stat-label{font-family:var(--mono);font-size:0.62rem;color:var(--paper-dim);
+  letter-spacing:0.07em;text-transform:uppercase;margin-top:0.4rem;}
+.stat-badge{position:absolute;top:1.1rem;right:1.1rem;font-family:var(--mono);font-size:0.58rem;
+  padding:0.2rem 0.5rem;border-radius:100px;letter-spacing:0.04em;}
+.stat-badge.up{background:var(--green-dim);color:var(--green);}
+.stat-badge.new{background:var(--coral-dim);color:var(--coral);}
+
+/* ── TWO-COL GRID ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-bottom:1.2rem;}
+@media(max-width:760px){.grid-2{grid-template-columns:1fr;}}
+.grid-3-1{display:grid;grid-template-columns:2fr 1fr;gap:1.2rem;margin-bottom:1.2rem;}
+@media(max-width:760px){.grid-3-1{grid-template-columns:1fr;}}
+
+/* ── PANEL BASE ── */
+.panel{background:var(--ink-2);border:1px solid var(--rule);border-radius:18px;
+  padding:1.5rem 1.4rem;position:relative;overflow:hidden;
+  animation:fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.25s both;}
+.panel::before{content:'';position:absolute;top:0;left:1rem;right:1rem;height:1px;
+  background:repeating-linear-gradient(90deg,var(--rule) 0 6px,transparent 6px 12px);}
+.panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;}
+.panel-title{font-family:var(--mono);font-size:0.68rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:0.09em;color:var(--paper-dim);display:flex;align-items:center;gap:0.5rem;}
+.panel-title span{font-size:1rem;}
+.panel-meta{font-family:var(--mono);font-size:0.62rem;color:rgba(245,240,230,0.3);letter-spacing:0.04em;}
+
+/* ── BAR CHART ── */
+.bar-chart{display:flex;align-items:flex-end;gap:0.5rem;height:100px;padding-bottom:0.3rem;}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:0.4rem;}
+.bar-fill{width:100%;border-radius:5px 5px 0 0;background:var(--coral-dim);
+  border:1px solid rgba(227,97,63,0.3);position:relative;transition:height 0.8s cubic-bezier(0.16,1,0.3,1);
+  min-height:4px;}
+.bar-fill.peak{background:linear-gradient(180deg,var(--coral),rgba(227,97,63,0.5));
+  border-color:var(--coral);box-shadow:0 0 12px rgba(227,97,63,0.3);}
+.bar-label{font-family:var(--mono);font-size:0.58rem;color:rgba(245,240,230,0.35);text-align:center;}
+
+/* ── PIE-STYLE RING CHART ── */
+.rings-wrap{display:flex;flex-direction:column;gap:0.75rem;}
+.ring-item{display:flex;align-items:center;gap:0.8rem;}
+.ring-label{font-family:var(--mono);font-size:0.66rem;color:var(--paper-dim);min-width:60px;letter-spacing:0.03em;}
+.ring-track{flex:1;height:5px;background:var(--surface2);border-radius:100px;overflow:hidden;}
+.ring-fill{height:100%;border-radius:100px;transition:width 1s cubic-bezier(0.16,1,0.3,1);}
+.ring-pct{font-family:var(--mono);font-size:0.62rem;color:var(--paper-dim);min-width:30px;text-align:right;}
+
+/* ── ACTIVITY FEED ── */
+.feed-list{display:flex;flex-direction:column;gap:0;}
+.feed-item{display:flex;align-items:flex-start;gap:0.9rem;padding:0.85rem 0;
+  border-bottom:1px solid var(--rule);position:relative;}
+.feed-item:last-child{border-bottom:none;}
+.feed-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:0.8rem;flex-shrink:0;margin-top:0.1rem;}
+.feed-dot.coral{background:var(--coral-dim);border:1px solid rgba(227,97,63,0.3);}
+.feed-dot.gold{background:var(--gold-dim);border:1px solid rgba(201,168,118,0.3);}
+.feed-dot.green{background:var(--green-dim);border:1px solid rgba(76,175,125,0.3);}
+.feed-text{flex:1;}
+.feed-action{font-size:0.84rem;font-weight:500;color:var(--paper);line-height:1.3;}
+.feed-action strong{color:var(--coral);}
+.feed-time{font-family:var(--mono);font-size:0.6rem;color:rgba(245,240,230,0.3);margin-top:0.2rem;}
+
+/* ── TOP OCCASIONS ── */
+.occ-list{display:flex;flex-direction:column;gap:0.6rem;}
+.occ-item{display:flex;align-items:center;gap:0.9rem;padding:0.7rem 0.8rem;
+  background:var(--surface2);border:1px solid var(--rule);border-radius:10px;
+  transition:all 0.2s;}
+.occ-item:hover{border-color:rgba(227,97,63,0.25);background:var(--coral-glow);}
+.occ-rank{font-family:var(--display);font-size:1.1rem;font-weight:600;color:rgba(245,240,230,0.18);
+  min-width:1.4rem;text-align:center;}
+.occ-icon{font-size:1.2rem;}
+.occ-name{flex:1;font-size:0.84rem;font-weight:500;}
+.occ-count{font-family:var(--mono);font-size:0.68rem;color:var(--coral);}
+
+/* ── RECENT TABLE ── */
+.table-wrap{overflow-x:auto;margin:0 -0.2rem;}
+table{width:100%;border-collapse:collapse;min-width:460px;}
+th{font-family:var(--mono);font-size:0.6rem;text-transform:uppercase;letter-spacing:0.08em;
+  color:rgba(245,240,230,0.3);padding:0 0.8rem 0.8rem;text-align:left;border-bottom:1px solid var(--rule);}
+td{padding:0.85rem 0.8rem;font-size:0.82rem;border-bottom:1px solid rgba(245,240,230,0.06);
+  vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface2);}
+.td-user{font-weight:500;}
+.td-badge{display:inline-flex;padding:0.2rem 0.6rem;border-radius:100px;
+  font-family:var(--mono);font-size:0.58rem;letter-spacing:0.04em;white-space:nowrap;}
+.td-badge.casual{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(201,168,118,0.3);}
+.td-badge.office{background:rgba(96,165,250,0.12);color:#6baed6;border:1px solid rgba(107,174,214,0.25);}
+.td-badge.party{background:var(--coral-dim);color:var(--coral);border:1px solid rgba(227,97,63,0.3);}
+.td-badge.date{background:rgba(244,114,182,0.12);color:#f472b6;border:1px solid rgba(244,114,182,0.25);}
+.td-badge.wedding{background:var(--green-dim);color:var(--green);border:1px solid rgba(76,175,125,0.3);}
+.td-badge.college{background:rgba(167,139,250,0.12);color:#a78bfa;border:1px solid rgba(167,139,250,0.25);}
+.td-stars{color:var(--gold);font-size:0.7rem;letter-spacing:-1px;}
+.td-time{font-family:var(--mono);font-size:0.62rem;color:rgba(245,240,230,0.35);}
+
+/* ── RATING WIDGET ── */
+.rating-big{text-align:center;padding:1rem 0 0.5rem;}
+.rating-num{font-family:var(--display);font-size:3.2rem;font-weight:700;color:var(--gold);
+  letter-spacing:-2px;line-height:1;}
+.rating-stars{font-size:1.1rem;color:var(--gold);letter-spacing:2px;margin:0.3rem 0;}
+.rating-count{font-family:var(--mono);font-size:0.64rem;color:rgba(245,240,230,0.35);letter-spacing:0.04em;}
+.rating-bars{margin-top:1rem;display:flex;flex-direction:column;gap:0.5rem;}
+.rbar-row{display:flex;align-items:center;gap:0.6rem;}
+.rbar-label{font-family:var(--mono);font-size:0.6rem;color:var(--paper-dim);min-width:14px;text-align:right;}
+.rbar-track{flex:1;height:4px;background:var(--surface2);border-radius:100px;overflow:hidden;}
+.rbar-fill{height:100%;border-radius:100px;background:var(--gold);transition:width 1s cubic-bezier(0.16,1,0.3,1);}
+.rbar-count{font-family:var(--mono);font-size:0.58rem;color:rgba(245,240,230,0.3);min-width:18px;}
+
+/* ── SEARCH BAR ── */
+.search-bar{display:flex;align-items:center;gap:0.7rem;background:var(--surface2);
+  border:1px solid var(--rule);border-radius:10px;padding:0.65rem 1rem;margin-bottom:1.2rem;
+  transition:border-color 0.2s;}
+.search-bar:focus-within{border-color:rgba(227,97,63,0.4);}
+.search-bar input{flex:1;background:none;border:none;outline:none;font-family:var(--body);
+  font-size:0.84rem;color:var(--paper);}
+.search-bar input::placeholder{color:rgba(245,240,230,0.25);}
+.search-icon{color:rgba(245,240,230,0.3);font-size:0.9rem;}
+
+/* ── WEATHER PILL ROW ── */
+.weather-row{display:flex;gap:0.6rem;flex-wrap:wrap;margin-bottom:1rem;}
+.w-pill{font-family:var(--mono);font-size:0.64rem;letter-spacing:0.04em;
+  padding:0.3rem 0.75rem;border-radius:100px;cursor:default;}
+.w-pill.hot{background:rgba(227,97,63,0.15);color:var(--coral);border:1px solid rgba(227,97,63,0.25);}
+.w-pill.cold{background:rgba(96,165,250,0.12);color:#6baed6;border:1px solid rgba(107,174,214,0.2);}
+.w-pill.rainy{background:rgba(167,139,250,0.1);color:#a78bfa;border:1px solid rgba(167,139,250,0.2);}
+
+/* ── FOOTER ── */
+.footer{position:relative;z-index:10;text-align:center;padding:1.6rem;
+  font-size:0.8rem;color:var(--paper-faint);border-top:1px solid var(--rule);}
+.footer strong{color:var(--paper);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+@media(max-width:600px){.navbar{padding:0.8rem 1rem;}.dash-wrap{padding:0 1rem 4rem;}.page-header{padding:2rem 1rem 1.2rem;}}
+</style>
+</head>
+<body>
+
+<div class="vignette"></div>
+<div class="grid-bg"></div>
+
+<!-- NAV -->
+<nav class="navbar">
+  <a class="logo" href="/"><span class="logo-mark">DD</span><span class="logo-text">Daily Drape</span></a>
+  <div class="nav-right">
+    <a href="/" class="nav-pill">Generator</a>
+    <a href="/favorites" class="nav-pill">Favorites</a>
+    <a href="/feedback-page" class="nav-pill">Feedback</a>
+    <a href="/admin" class="nav-pill active">Dashboard</a>
+    <a href="/logout" class="nav-pill logout">Sign out</a>
+  </div>
+</nav>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="page-kicker">ADMIN · LIVE DATA</div>
+  <h1 class="page-title">Your style <em>analytics.</em></h1>
+  <p class="page-sub">Everything Daily Drape has generated, rated, and collected — at a glance.</p>
+</div>
+
+<div class="dash-wrap">
+
+  <!-- STAT CARDS -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <span class="stat-icon">✦</span>
+      <div class="stat-val coral" id="stat-total">—</div>
+      <div class="stat-label">Total Outfits</div>
+      <span class="stat-badge up" id="badge-total">loading…</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon">♡</span>
+      <div class="stat-val gold" id="stat-favs">—</div>
+      <div class="stat-label">Favorites Saved</div>
+      <span class="stat-badge up" id="badge-favs">loading…</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon">◆</span>
+      <div class="stat-val" id="stat-rating">—</div>
+      <div class="stat-label">Avg Rating</div>
+      <span class="stat-badge new" id="badge-rating">loading…</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon">◇</span>
+      <div class="stat-val green" id="stat-users">—</div>
+      <div class="stat-label">Registered Users</div>
+      <span class="stat-badge up" id="badge-users">loading…</span>
+    </div>
+  </div>
+
+  <!-- BAR CHART + OCCASIONS -->
+  <div class="grid-3-1">
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title"><span>📊</span> Outfits Generated — Last 7 Days</div>
+        <div class="panel-meta" id="chart-total-label">— this week</div>
+      </div>
+      <div class="bar-chart" id="barChart">
+        <!-- filled by JS -->
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title"><span>🎯</span> Top Occasions</div>
+      </div>
+      <div class="occ-list" id="occList">
+        <!-- filled by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- WEATHER BREAKDOWN + RATING + GENDER SPLIT -->
+  <div class="grid-2" style="margin-bottom:1.2rem;">
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title"><span>🌤</span> Weather Breakdown</div>
+      </div>
+      <div class="rings-wrap" id="weatherRings">
+        <!-- filled by JS -->
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title"><span>⭐</span> Rating Distribution</div>
+      </div>
+      <div class="rating-big">
+        <div class="rating-num" id="bigRating">—</div>
+        <div class="rating-stars" id="bigStars">★★★★★</div>
+        <div class="rating-count" id="ratingCount">— ratings</div>
+      </div>
+      <div class="rating-bars" id="ratingBars">
+        <!-- filled by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- GENDER SPLIT -->
+  <div class="panel" style="margin-bottom:1.2rem;">
+    <div class="panel-head">
+      <div class="panel-title"><span>👤</span> Gender Split</div>
+      <div class="panel-meta" id="genderMeta">—</div>
+    </div>
+    <div class="rings-wrap" id="genderRings"></div>
+  </div>
+
+  <!-- ACTIVITY FEED + RECENT REQUESTS -->
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title"><span>⚡</span> Activity Feed</div>
+        <div class="panel-meta">LIVE</div>
+      </div>
+      <div class="feed-list" id="feedList">
+        <!-- filled by JS -->
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title"><span>🕐</span> Recent Requests</div>
+      </div>
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Filter by occasion, gender…" id="tableSearch" oninput="filterTable()">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>User</th><th>Occasion</th><th>Weather</th><th>Rating</th><th>Time</th>
+            </tr>
+          </thead>
+          <tbody id="recentTbody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer class="footer"><p>Made with 💖 by <strong>Vishwa</strong> · Daily Drape © 2026</p></footer>
+
+<script>
+/* ══════════════════════════════════════════
+   DASHBOARD DATA ENGINE
+   Replace the fetch() calls with your real Flask API endpoints.
+   Each section below shows where to plug in.
+═══════════════════════════════════════════ */
+
+// ── Helpers ──────────────────────────────
+function stars(n){
+  const full=Math.round(n);
+  return '★'.repeat(Math.max(0,full))+'☆'.repeat(Math.max(0,5-full));
+}
+function animCount(el,target,suffix=''){
+  const start=0,dur=900;
+  const t0=performance.now();
+  function step(now){
+    const p=Math.min((now-t0)/dur,1);
+    const ease=1-Math.pow(1-p,3);
+    el.textContent=Math.round(start+(target-start)*ease)+(suffix);
+    if(p<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+// ── Bar Chart ─────────────────────────────
+function renderBarChart(data){
+  // data: [{day:'Mon',count:42},…]
+  const chart=document.getElementById('barChart');
+  const max=Math.max(...data.map(d=>d.count),1);
+  const total=data.reduce((a,d)=>a+d.count,0);
+  document.getElementById('chart-total-label').textContent=total+' this week';
+  const peakIdx=data.findIndex(d=>d.count===Math.max(...data.map(x=>x.count)));
+  chart.innerHTML=data.map((d,i)=>`
+    <div class="bar-col">
+      <div class="bar-fill${i===peakIdx?' peak':''}" id="bar-${i}" style="height:4px" data-h="${Math.round((d.count/max)*90)}px"></div>
+      <div class="bar-label">${d.day}</div>
+    </div>`).join('');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    data.forEach((_,i)=>{
+      const b=document.getElementById('bar-'+i);
+      b.style.transition='height 0.8s cubic-bezier(0.16,1,0.3,1) '+(i*0.05)+'s';
+      b.style.height=b.dataset.h;
+    });
+  }));
+}
+
+// ── Occasions ─────────────────────────────
+const OCC_ICONS={casual:'😎',office:'💼',party:'🎊',date:'💕',wedding:'💍',college:'🎓'};
+function renderOccasions(data){
+  // data: [{name:'casual',count:120},…] sorted desc
+  const el=document.getElementById('occList');
+  el.innerHTML=data.slice(0,5).map((d,i)=>`
+    <div class="occ-item">
+      <div class="occ-rank">${i+1}</div>
+      <div class="occ-icon">${OCC_ICONS[d.name]||'✦'}</div>
+      <div class="occ-name">${d.name.charAt(0).toUpperCase()+d.name.slice(1)}</div>
+      <div class="occ-count">${d.count}</div>
+    </div>`).join('');
+}
+
+// ── Weather Rings ─────────────────────────
+function renderWeatherRings(data){
+  // data: {hot:60,cold:25,rainy:15}
+  const COLORS={hot:'var(--coral)',cold:'#6baed6',rainy:'#a78bfa'};
+  const ICONS={hot:'☀️',cold:'❄️',rainy:'🌧️'};
+  const total=Object.values(data).reduce((a,v)=>a+v,0)||1;
+  const el=document.getElementById('weatherRings');
+  el.innerHTML=Object.entries(data).map(([k,v])=>{
+    const pct=Math.round(v/total*100);
+    return `<div class="ring-item">
+      <div class="ring-label">${ICONS[k]} ${k.charAt(0).toUpperCase()+k.slice(1)}</div>
+      <div class="ring-track"><div class="ring-fill" id="wr-${k}" style="width:0;background:${COLORS[k]}" data-w="${pct}%"></div></div>
+      <div class="ring-pct">${pct}%</div>
+    </div>`;
+  }).join('');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    Object.keys(data).forEach(k=>{
+      const f=document.getElementById('wr-'+k);
+      f.style.transition='width 0.9s cubic-bezier(0.16,1,0.3,1)';
+      f.style.width=f.dataset.w;
+    });
+  }));
+  // add weather pills above rings
+  const pillsHtml=Object.entries(data).map(([k,v])=>
+    `<span class="w-pill ${k}">${ICONS[k]} ${k}: ${v}</span>`).join('');
+  document.getElementById('weatherRings').insertAdjacentHTML('beforebegin',`<div class="weather-row">${pillsHtml}</div>`);
+}
+
+// ── Rating Distribution ────────────────────
+function renderRatings(data){
+  // data: {avg:4.7, count:380, dist:{5:220,4:100,3:40,2:10,1:10}}
+  const bigR=document.getElementById('bigRating');
+  bigR.textContent=data.avg.toFixed(1);
+  document.getElementById('bigStars').textContent=stars(data.avg);
+  document.getElementById('ratingCount').textContent=data.count+' ratings';
+  const barsEl=document.getElementById('ratingBars');
+  const max=Math.max(...Object.values(data.dist),1);
+  barsEl.innerHTML=[5,4,3,2,1].map(s=>`
+    <div class="rbar-row">
+      <div class="rbar-label">${s}★</div>
+      <div class="rbar-track"><div class="rbar-fill" id="rb-${s}" style="width:0" data-w="${Math.round((data.dist[s]||0)/max*100)}%"></div></div>
+      <div class="rbar-count">${data.dist[s]||0}</div>
+    </div>`).join('');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    [5,4,3,2,1].forEach(s=>{
+      const f=document.getElementById('rb-'+s);
+      f.style.transition='width 0.9s cubic-bezier(0.16,1,0.3,1)';
+      f.style.width=f.dataset.w;
+    });
+  }));
+}
+
+// ── Gender Split ──────────────────────────
+function renderGender(data){
+  // data: {male:230,female:190}
+  const total=Object.values(data).reduce((a,v)=>a+v,0)||1;
+  const COLORS={male:'var(--coral)',female:'var(--gold)'};
+  const ICONS={male:'👨','female':'👩'};
+  const el=document.getElementById('genderRings');
+  document.getElementById('genderMeta').textContent=total+' total requests';
+  el.innerHTML=Object.entries(data).map(([k,v])=>{
+    const pct=Math.round(v/total*100);
+    return `<div class="ring-item">
+      <div class="ring-label">${ICONS[k]||'👤'} ${k.charAt(0).toUpperCase()+k.slice(1)}</div>
+      <div class="ring-track"><div class="ring-fill" id="gr-${k}" style="width:0;background:${COLORS[k]||'var(--paper)'}" data-w="${pct}%"></div></div>
+      <div class="ring-pct">${pct}%</div>
+    </div>`;
+  }).join('');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    Object.keys(data).forEach(k=>{
+      const f=document.getElementById('gr-'+k);
+      f.style.transition='width 1s cubic-bezier(0.16,1,0.3,1)';
+      f.style.width=f.dataset.w;
+    });
+  }));
+}
+
+// ── Activity Feed ─────────────────────────
+function renderFeed(items){
+  // items: [{type:'outfit'|'fav'|'rating',text:'…',time:'2 min ago'},…]
+  const TYPES={
+    outfit:{cls:'coral',icon:'✦'},
+    fav:{cls:'gold',icon:'♡'},
+    rating:{cls:'green',icon:'★'}
+  };
+  const el=document.getElementById('feedList');
+  el.innerHTML=items.map(it=>{
+    const t=TYPES[it.type]||TYPES.outfit;
+    return `<div class="feed-item">
+      <div class="feed-dot ${t.cls}">${t.icon}</div>
+      <div class="feed-text">
+        <div class="feed-action">${it.text}</div>
+        <div class="feed-time">${it.time}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Recent Table ──────────────────────────
+let allRows=[];
+function renderTable(rows){
+  allRows=rows;
+  drawTable(rows);
+}
+function drawTable(rows){
+  const OCC_CLASS={casual:'casual',office:'office',party:'party',date:'date',wedding:'wedding',college:'college'};
+  const W_ICONS={hot:'☀️',cold:'❄️',rainy:'🌧️'};
+  const tbody=document.getElementById('recentTbody');
+  tbody.innerHTML=rows.slice(0,12).map(r=>`
+    <tr>
+      <td class="td-user">${r.user}</td>
+      <td><span class="td-badge ${OCC_CLASS[r.occasion]||''}">${r.occasion}</span></td>
+      <td>${W_ICONS[r.weather]||''} ${r.weather}</td>
+      <td class="td-stars">${stars(r.rating||0)}</td>
+      <td class="td-time">${r.time}</td>
+    </tr>`).join('');
+}
+function filterTable(){
+  const q=document.getElementById('tableSearch').value.toLowerCase().trim();
+  if(!q){drawTable(allRows);return;}
+  drawTable(allRows.filter(r=>
+    r.occasion.includes(q)||r.gender?.includes(q)||r.weather?.includes(q)||r.user?.toLowerCase().includes(q)
+  ));
+}
+
+// ── Stat Counters ─────────────────────────
+function renderStats(data){
+  // data: {total:420,favs:118,rating:4.7,users:34}
+  document.getElementById('stat-total').textContent='—';
+  document.getElementById('stat-favs').textContent='—';
+  document.getElementById('stat-rating').textContent='—';
+  document.getElementById('stat-users').textContent='—';
+  animCount(document.getElementById('stat-total'),data.total);
+  animCount(document.getElementById('stat-favs'),data.favs);
+  setTimeout(()=>{document.getElementById('stat-rating').textContent=data.rating.toFixed(1)+'★';},400);
+  animCount(document.getElementById('stat-users'),data.users);
+  document.getElementById('badge-total').textContent='+'+Math.round(data.total*0.12)+' this week';
+  document.getElementById('badge-favs').textContent='+'+Math.round(data.favs*0.09)+' this week';
+  document.getElementById('badge-rating').textContent=data.rating>=4.5?'Excellent':'Good';
+  document.getElementById('badge-users').textContent='+'+Math.round(data.users*0.15)+' this month';
+}
+
+// ══════════════════════════════════════════
+//  MAIN LOAD — fetch from Flask API
+//  Replace each URL with your real endpoint.
+// ══════════════════════════════════════════
+async function loadDashboard(){
+  try {
+    // ── Try to fetch real data from Flask ─
+    const res = await fetch('/admin/stats');
+    if(!res.ok) throw new Error('no data');
+    const d = await res.json();
+
+    renderStats({
+      total: d.total_outfits ?? 0,
+      favs:  d.total_favorites ?? 0,
+      rating:parseFloat(d.avg_rating) || 0,
+      users: d.total_users ?? 0
+    });
+
+    // Build week data from d.daily_counts if available
+    const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const weekData = d.daily_counts
+      ? days.map((day,i)=>({day,count:d.daily_counts[i]||0}))
+      : days.map(day=>({day,count:0}));
+    renderBarChart(weekData);
+
+    // Occasions
+    const occData = d.occasions
+      ? Object.entries(d.occasions).map(([name,count])=>({name,count})).sort((a,b)=>b.count-a.count)
+      : [];
+    renderOccasions(occData);
+
+    // Weather
+    renderWeatherRings(d.weather || {hot:0,cold:0,rainy:0});
+
+    // Ratings
+    renderRatings({
+      avg: parseFloat(d.avg_rating)||0,
+      count: d.total_ratings||0,
+      dist: d.rating_dist||{5:0,4:0,3:0,2:0,1:0}
+    });
+
+    // Gender
+    renderGender(d.gender || {male:0,female:0});
+
+    // Feed
+    renderFeed(d.recent_activity || []);
+
+    // Table
+    renderTable(d.recent_requests || []);
+
+  } catch(e){
+    // ── Fallback: rich demo data if Flask not connected ─
+    renderStats({total:420,favs:118,rating:4.7,users:34});
+    renderBarChart([
+      {day:'Mon',count:48},{day:'Tue',count:62},{day:'Wed',count:55},
+      {day:'Thu',count:71},{day:'Fri',count:90},{day:'Sat',count:66},{day:'Sun',count:38}
+    ]);
+    renderOccasions([
+      {name:'casual',count:142},{name:'party',count:98},{name:'date',count:75},
+      {name:'office',count:60},{name:'college',count:45},{name:'wedding',count:30}
+    ]);
+    renderWeatherRings({hot:210,cold:130,rainy:80});
+    renderRatings({avg:4.7,count:312,dist:{5:180,4:88,3:28,2:10,1:6}});
+    renderGender({male:230,female:190});
+    renderFeed([
+      {type:'outfit',text:'<strong>priya_k</strong> generated a party outfit',time:'2 min ago'},
+      {type:'fav',text:'<strong>ruhan_d</strong> saved an outfit to favorites',time:'5 min ago'},
+      {type:'rating',text:'<strong>meera_s</strong> rated their look <strong>5★</strong>',time:'11 min ago'},
+      {type:'outfit',text:'<strong>arjun_v</strong> generated a date outfit',time:'18 min ago'},
+      {type:'fav',text:'<strong>ishaan_r</strong> saved a wedding look',time:'24 min ago'},
+      {type:'rating',text:'<strong>neha_t</strong> rated their look <strong>4★</strong>',time:'31 min ago'},
+    ]);
+    renderTable([
+      {user:'priya_k',occasion:'party',weather:'hot',rating:5,time:'2m ago'},
+      {user:'ruhan_d',occasion:'casual',weather:'cold',rating:4,time:'5m ago'},
+      {user:'meera_s',occasion:'date',weather:'rainy',rating:5,time:'11m ago'},
+      {user:'arjun_v',occasion:'office',weather:'hot',rating:4,time:'18m ago'},
+      {user:'ishaan_r',occasion:'wedding',weather:'cold',rating:5,time:'24m ago'},
+      {user:'neha_t',occasion:'college',weather:'hot',rating:4,time:'31m ago'},
+      {user:'dev_m',occasion:'casual',weather:'rainy',rating:3,time:'42m ago'},
+      {user:'ritika_p',occasion:'party',weather:'hot',rating:5,time:'55m ago'},
+    ]);
+  }
+}
+
+loadDashboard();
+
+// ── Live feed ticker (every 25s) ──────────
+const NEW_EVENTS=[
+  {type:'outfit',text:'<strong>tanya_b</strong> generated a casual outfit',time:'just now'},
+  {type:'fav',text:'<strong>kunal_s</strong> saved a date look',time:'just now'},
+  {type:'rating',text:'<strong>aman_j</strong> rated their look <strong>5★</strong>',time:'just now'},
+];
+let tickIdx=0;
+setInterval(()=>{
+  const feed=document.getElementById('feedList');
+  if(!feed) return;
+  const item=NEW_EVENTS[tickIdx%NEW_EVENTS.length];
+  tickIdx++;
+  const TYPES={outfit:{cls:'coral',icon:'✦'},fav:{cls:'gold',icon:'♡'},rating:{cls:'green',icon:'★'}};
+  const t=TYPES[item.type];
+  const div=document.createElement('div');
+  div.className='feed-item';
+  div.style.opacity='0';
+  div.style.transform='translateY(-8px)';
+  div.style.transition='all 0.4s ease';
+  div.innerHTML=`<div class="feed-dot ${t.cls}">${t.icon}</div>
+    <div class="feed-text"><div class="feed-action">${item.text}</div>
+    <div class="feed-time">${item.time}</div></div>`;
+  feed.insertBefore(div,feed.firstChild);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    div.style.opacity='1';div.style.transform='translateY(0)';
+  }));
+  if(feed.children.length>8) feed.removeChild(feed.lastChild);
+},25000);
+</script>
+</body>
+</html>

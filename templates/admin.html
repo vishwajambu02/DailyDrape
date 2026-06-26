@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Drape — {{ 'Admin Dashboard' if is_admin else 'Dashboard' }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0c0a09; --ink-2:#16130f;
+  --surface2:rgba(245,240,230,0.04);
+  --rule:rgba(245,240,230,0.13);
+  --coral:#e3613f; --coral-dim:rgba(227,97,63,0.16); --coral-glow:rgba(227,97,63,0.08);
+  --gold:#c9a876; --gold-dim:rgba(201,168,118,0.15);
+  --green:#4caf7d; --green-dim:rgba(76,175,125,0.15);
+  --paper:#f5f0e6; --paper-dim:rgba(245,240,230,0.55); --paper-faint:rgba(245,240,230,0.2);
+  --display:'Fraunces',serif; --body:'Inter',sans-serif; --mono:'Space Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--body);background:var(--ink);color:var(--paper);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important;}}
+.grid-bg{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(245,240,230,0.025) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(245,240,230,0.025) 1px,transparent 1px);background-size:60px 60px;}
+.vignette{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(227,97,63,0.09),transparent 60%),
+  radial-gradient(ellipse 60% 50% at 100% 100%,rgba(201,168,118,0.05),transparent 60%);}
+
+/* NAV */
+.navbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;
+  justify-content:space-between;padding:1.1rem 2rem;
+  background:rgba(12,10,9,0.82);backdrop-filter:blur(16px);border-bottom:1px solid var(--rule);}
+.logo{display:flex;align-items:baseline;gap:0.5rem;text-decoration:none;}
+.logo-mark{font-family:var(--mono);font-size:0.65rem;color:var(--coral);
+  border:1px solid var(--coral);padding:0.1rem 0.35rem;border-radius:3px;letter-spacing:0.04em;}
+.logo-text{font-family:var(--display);font-size:1.25rem;font-weight:600;color:var(--paper);letter-spacing:-0.2px;}
+.nav-right{display:flex;align-items:center;gap:0.6rem;}
+.nav-pill{font-size:0.82rem;font-weight:500;color:var(--paper-dim);text-decoration:none;
+  padding:0.4rem 0.95rem;border:1px solid var(--rule);border-radius:100px;transition:all 0.2s;white-space:nowrap;}
+.nav-pill:hover{color:var(--paper);border-color:rgba(227,97,63,0.4);background:var(--coral-dim);}
+.nav-pill.active{color:var(--coral);border-color:rgba(227,97,63,0.5);background:var(--coral-dim);}
+.nav-pill.logout:hover{border-color:#d64545;color:#e8807a;background:rgba(214,69,69,0.08);}
+
+/* PAGE HEADER */
+.page-header{position:relative;z-index:10;padding:3rem 2rem 1.5rem;max-width:1200px;margin:0 auto;}
+.page-kicker{display:inline-flex;align-items:center;gap:0.5rem;font-family:var(--mono);
+  font-size:0.7rem;letter-spacing:0.06em;color:var(--gold);background:var(--gold-dim);
+  border:1px solid rgba(201,168,118,0.25);border-radius:100px;padding:0.35rem 1rem;margin-bottom:1.2rem;}
+.page-kicker::before{content:'◆';font-size:0.45rem;color:var(--gold);}
+.page-title{font-family:var(--display);font-size:clamp(2rem,4vw,2.8rem);font-weight:600;
+  letter-spacing:-1px;line-height:1.1;margin-bottom:0.4rem;}
+.page-title em{font-style:italic;font-weight:500;color:var(--coral);}
+.page-sub{font-size:0.92rem;color:var(--paper-dim);}
+
+/* ADMIN BADGE */
+.admin-badge{display:inline-flex;align-items:center;gap:0.4rem;font-family:var(--mono);
+  font-size:0.65rem;color:var(--coral);background:var(--coral-dim);
+  border:1px solid rgba(227,97,63,0.35);border-radius:100px;padding:0.25rem 0.75rem;
+  margin-left:0.8rem;vertical-align:middle;letter-spacing:0.05em;}
+
+/* MAIN */
+.dash-wrap{position:relative;z-index:10;max-width:1200px;margin:0 auto;padding:0 2rem 5rem;}
+
+/* STAT CARDS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem;}
+@media(max-width:900px){.stats-row{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:520px){.stats-row{grid-template-columns:1fr;}}
+.stat-card{background:var(--ink-2);border:1px solid var(--rule);border-radius:18px;
+  padding:1.5rem 1.4rem;position:relative;overflow:hidden;
+  animation:fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) both;
+  transition:border-color 0.2s,box-shadow 0.2s;}
+.stat-card:hover{border-color:rgba(227,97,63,0.3);box-shadow:0 8px 32px rgba(227,97,63,0.08);}
+.stat-card:nth-child(1){animation-delay:0.05s;}
+.stat-card:nth-child(2){animation-delay:0.1s;}
+.stat-card:nth-child(3){animation-delay:0.15s;}
+.stat-card:nth-child(4){animation-delay:0.2s;}
+.stat-card::before{content:'';position:absolute;top:0;left:1rem;right:1rem;height:1px;
+  background:repeating-linear-gradient(90deg,var(--rule) 0 6px,transparent 6px 12px);}
+.stat-icon{font-size:1.4rem;margin-bottom:0.9rem;display:block;}
+.stat-val{font-family:var(--display);font-size:2rem;font-weight:700;letter-spacing:-0.5px;line-height:1;}
+.stat-val.coral{color:var(--coral);}
+.stat-val.gold{color:var(--gold);}
+.stat-val.green{color:var(--green);}
+.stat-label{font-family:var(--mono);font-size:0.62rem;color:var(--paper-dim);
+  letter-spacing:0.07em;text-transform:uppercase;margin-top:0.4rem;}
+
+/* PANEL */
+.panel{background:var(--ink-2);border:1px solid var(--rule);border-radius:18px;
+  padding:1.5rem 1.4rem;position:relative;overflow:hidden;
+  animation:fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.25s both;}
+.panel::before{content:'';position:absolute;top:0;left:1rem;right:1rem;height:1px;
+  background:repeating-linear-gradient(90deg,var(--rule) 0 6px,transparent 6px 12px);}
+.panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;}
+.panel-title{font-family:var(--mono);font-size:0.68rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:0.09em;color:var(--paper-dim);display:flex;align-items:center;gap:0.5rem;}
+.panel-title span{font-size:1rem;}
+.panel-meta{font-family:var(--mono);font-size:0.62rem;color:rgba(245,240,230,0.3);letter-spacing:0.04em;}
+
+/* GRID LAYOUTS */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-bottom:1.2rem;}
+@media(max-width:760px){.grid-2{grid-template-columns:1fr;}}
+.grid-3-1{display:grid;grid-template-columns:2fr 1fr;gap:1.2rem;margin-bottom:1.2rem;}
+@media(max-width:760px){.grid-3-1{grid-template-columns:1fr;}}
+.mb{margin-bottom:1.2rem;}
+
+/* BAR CHART */
+.bar-chart{display:flex;align-items:flex-end;gap:0.5rem;height:100px;}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:0.4rem;}
+.bar-fill{width:100%;border-radius:5px 5px 0 0;background:var(--coral-dim);
+  border:1px solid rgba(227,97,63,0.3);min-height:4px;}
+.bar-fill.peak{background:linear-gradient(180deg,var(--coral),rgba(227,97,63,0.5));
+  border-color:var(--coral);box-shadow:0 0 12px rgba(227,97,63,0.3);}
+.bar-label{font-family:var(--mono);font-size:0.58rem;color:rgba(245,240,230,0.35);text-align:center;}
+
+/* RING BARS */
+.rings-wrap{display:flex;flex-direction:column;gap:0.75rem;}
+.ring-item{display:flex;align-items:center;gap:0.8rem;}
+.ring-label{font-family:var(--mono);font-size:0.66rem;color:var(--paper-dim);
+  min-width:80px;letter-spacing:0.03em;text-transform:capitalize;}
+.ring-track{flex:1;height:5px;background:var(--surface2);border-radius:100px;overflow:hidden;}
+.ring-fill{height:100%;border-radius:100px;transition:width 1s cubic-bezier(0.16,1,0.3,1);}
+.ring-pct{font-family:var(--mono);font-size:0.62rem;color:var(--paper-dim);min-width:36px;text-align:right;}
+.ring-count{font-family:var(--mono);font-size:0.6rem;color:rgba(245,240,230,0.3);min-width:28px;text-align:right;}
+
+/* OCC LIST */
+.occ-list{display:flex;flex-direction:column;gap:0.6rem;}
+.occ-item{display:flex;align-items:center;gap:0.9rem;padding:0.7rem 0.8rem;
+  background:var(--surface2);border:1px solid var(--rule);border-radius:10px;transition:all 0.2s;}
+.occ-item:hover{border-color:rgba(227,97,63,0.25);background:var(--coral-glow);}
+.occ-rank{font-family:var(--display);font-size:1.1rem;font-weight:600;
+  color:rgba(245,240,230,0.18);min-width:1.4rem;text-align:center;}
+.occ-icon{font-size:1.2rem;}
+.occ-name{flex:1;font-size:0.84rem;font-weight:500;text-transform:capitalize;}
+.occ-count{font-family:var(--mono);font-size:0.68rem;color:var(--coral);}
+
+/* TABLES */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;min-width:380px;}
+th{font-family:var(--mono);font-size:0.6rem;text-transform:uppercase;letter-spacing:0.08em;
+  color:rgba(245,240,230,0.3);padding:0 0.8rem 0.8rem;text-align:left;border-bottom:1px solid var(--rule);}
+td{padding:0.85rem 0.8rem;font-size:0.82rem;
+  border-bottom:1px solid rgba(245,240,230,0.06);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface2);}
+.td-stars{color:var(--gold);font-size:0.75rem;letter-spacing:-1px;}
+.td-name{font-weight:500;}
+.td-email{font-family:var(--mono);font-size:0.72rem;color:var(--coral);}
+.td-dim{color:var(--paper-dim);font-size:0.8rem;}
+.td-comment{color:var(--paper-dim);font-size:0.8rem;max-width:200px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.td-badge{display:inline-flex;padding:0.2rem 0.55rem;border-radius:100px;
+  font-family:var(--mono);font-size:0.58rem;letter-spacing:0.04em;white-space:nowrap;}
+.td-badge.ok{background:var(--green-dim);color:var(--green);border:1px solid rgba(76,175,125,0.3);}
+.td-badge.fail{background:var(--coral-dim);color:var(--coral);border:1px solid rgba(227,97,63,0.3);}
+.td-badge.party{background:var(--coral-dim);color:var(--coral);border:1px solid rgba(227,97,63,0.3);}
+.td-badge.date{background:rgba(244,114,182,0.12);color:#f472b6;border:1px solid rgba(244,114,182,0.25);}
+.td-badge.wedding{background:var(--green-dim);color:var(--green);border:1px solid rgba(76,175,125,0.3);}
+.td-badge.college{background:rgba(167,139,250,0.12);color:#a78bfa;border:1px solid rgba(167,139,250,0.25);}
+
+/* USER ROWS TABLE */
+.user-table{min-width:560px;}
+
+/* SECTION DIVIDER */
+.section-divider{position:relative;z-index:10;display:flex;align-items:center;gap:1rem;
+  max-width:1200px;margin:0.5rem auto 1.5rem;padding:0 2rem;}
+.section-divider::before,.section-divider::after{content:'';flex:1;height:1px;background:var(--rule);}
+.section-label{font-family:var(--mono);font-size:0.62rem;color:rgba(245,240,230,0.3);
+  letter-spacing:0.1em;white-space:nowrap;}
+
+.footer{position:relative;z-index:10;text-align:center;padding:1.6rem;
+  font-size:0.8rem;color:var(--paper-faint);border-top:1px solid var(--rule);}
+.footer strong{color:var(--paper);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+@media(max-width:600px){.navbar{padding:0.8rem 1rem;}.dash-wrap,.page-header,.section-divider{padding-left:1rem;padding-right:1rem;}}
+
+/* ── Photo upload panel — extends existing token system, no new colors introduced ── */
+.combo-filters{display:flex;gap:0.6rem;flex-wrap:wrap;margin-bottom:1.4rem;}
+.combo-search{flex:1;min-width:200px;background:var(--surface2);border:1px solid var(--rule);
+  border-radius:10px;padding:0.6rem 0.9rem;font-family:var(--body);font-size:0.82rem;color:var(--paper);}
+.combo-search::placeholder{color:rgba(245,240,230,0.3);}
+.combo-search:focus{outline:none;border-color:rgba(227,97,63,0.4);}
+.combo-select{background:var(--surface2);border:1px solid var(--rule);border-radius:10px;
+  padding:0.6rem 0.8rem;font-family:var(--mono);font-size:0.72rem;color:var(--paper-dim);
+  cursor:pointer;}
+.combo-select:focus{outline:none;border-color:rgba(227,97,63,0.4);}
+
+.combo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0.9rem;}
+.combo-card{background:var(--surface2);border:1px solid var(--rule);border-radius:14px;
+  padding:1rem;transition:border-color 0.2s;}
+.combo-card:hover{border-color:rgba(227,97,63,0.25);}
+.combo-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;margin-bottom:0.55rem;}
+.combo-tags{display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;}
+.combo-tag-plain{font-family:var(--mono);font-size:0.6rem;color:var(--paper-dim);
+  text-transform:capitalize;letter-spacing:0.03em;}
+.combo-progress{font-family:var(--mono);font-size:0.65rem;color:var(--gold);
+  background:var(--gold-dim);border:1px solid rgba(201,168,118,0.25);border-radius:100px;
+  padding:0.15rem 0.55rem;white-space:nowrap;}
+.combo-progress.complete{color:var(--green);background:var(--green-dim);border-color:rgba(76,175,125,0.3);}
+.combo-progress.empty{color:var(--coral);background:var(--coral-dim);border-color:rgba(227,97,63,0.3);}
+.combo-outfit-line{font-size:0.74rem;color:var(--paper-dim);margin-bottom:0.8rem;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+.slot-row{display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;}
+.photo-slot{position:relative;}
+.slot-box{position:relative;aspect-ratio:3/4;border-radius:9px;overflow:hidden;
+  border:1px dashed var(--rule);cursor:pointer;background:rgba(245,240,230,0.02);
+  transition:border-color 0.2s,background 0.2s;}
+.slot-box:hover{border-color:rgba(227,97,63,0.45);background:var(--coral-glow);}
+.slot-box.filled{border-style:solid;border-color:var(--rule);}
+.slot-img{width:100%;height:100%;object-fit:cover;display:block;}
+.slot-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:0.2rem;}
+.slot-plus{font-family:var(--display);font-size:1.3rem;color:rgba(245,240,230,0.25);line-height:1;}
+.slot-num{font-family:var(--mono);font-size:0.55rem;color:rgba(245,240,230,0.25);letter-spacing:0.04em;}
+.slot-remove{position:absolute;top:0.3rem;right:0.3rem;width:1.4rem;height:1.4rem;border-radius:50%;
+  background:rgba(12,10,9,0.75);border:1px solid rgba(245,240,230,0.2);color:var(--paper);
+  font-size:0.7rem;line-height:1;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;backdrop-filter:blur(4px);transition:background 0.2s,border-color 0.2s;}
+.slot-remove:hover{background:rgba(214,69,69,0.85);border-color:#d64545;}
+.slot-uploading{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+  background:rgba(12,10,9,0.6);backdrop-filter:blur(2px);}
+.photo-slot.is-uploading .slot-uploading{display:flex;}
+.slot-spinner{width:1.1rem;height:1.1rem;border-radius:50%;
+  border:2px solid rgba(245,240,230,0.25);border-top-color:var(--coral);
+  animation:slotSpin 0.7s linear infinite;}
+@keyframes slotSpin{to{transform:rotate(360deg);}}
+
+.combo-empty-state{text-align:center;padding:2.5rem 1rem;color:var(--paper-dim);font-size:0.85rem;}
+
+@media(prefers-reduced-motion:reduce){.slot-spinner{animation:none;}}
+</style>
+</head>
+<body>
+
+<div class="vignette"></div>
+<div class="grid-bg"></div>
+
+<nav class="navbar">
+  <a class="logo" href="/"><span class="logo-mark">DD</span><span class="logo-text">Daily Drape</span></a>
+  <div class="nav-right">
+    <a href="/" class="nav-pill">Generator</a>
+    <a href="/favorites" class="nav-pill">Favorites</a>
+    <a href="/feedback-page" class="nav-pill">Feedback</a>
+    {% if is_admin %}
+    <a href="/admin" class="nav-pill active">Dashboard</a>
+    {% else %}
+    <a href="/admin" class="nav-pill active">My Stats</a>
+    {% endif %}
+    <a href="/logout" class="nav-pill logout">Sign out</a>
+  </div>
+</nav>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  {% if is_admin %}
+  <div class="page-kicker">ADMIN · FULL ACCESS</div>
+  <h1 class="page-title">Admin <em>Dashboard</em><span class="admin-badge">🔑 OWNER</span></h1>
+  <p class="page-sub">Complete view of every user, outfit, rating, and activity on Daily Drape.</p>
+  {% else %}
+  <div class="page-kicker">LIVE DATA</div>
+  <h1 class="page-title">Your style <em>analytics.</em></h1>
+  <p class="page-sub">Everything Daily Drape has generated, rated, and collected — at a glance.</p>
+  {% endif %}
+</div>
+
+<div class="dash-wrap">
+
+  <!-- ── STAT CARDS (everyone) ── -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <span class="stat-icon">👥</span>
+      <div class="stat-val green" data-count="{{ total_users }}">{{ total_users }}</div>
+      <div class="stat-label">Registered Users</div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon">✦</span>
+      <div class="stat-val coral" data-count="{{ total_recommendations }}">{{ total_recommendations }}</div>
+      <div class="stat-label">Total Outfits</div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon">♡</span>
+      <div class="stat-val gold" data-count="{{ total_likes }}">{{ total_likes }}</div>
+      <div class="stat-label">Total Likes</div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon">💬</span>
+      <div class="stat-val" data-count="{{ total_feedback }}">{{ total_feedback }}</div>
+      <div class="stat-label">Total Feedback</div>
+    </div>
+  </div>
+
+  <!-- ── OCCASION BREAKDOWN + GENDER SPLIT (everyone) ── -->
+  <div class="grid-3-1">
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title"><span>🎯</span> Occasion Breakdown</div>
+        <div class="panel-meta">{{ total_recommendations }} total outfits</div>
+      </div>
+      <div class="occ-list">
+        {% set occ_icons = {'party':'🎊','date':'💕','wedding':'💍','college':'🎓'} %}
+        {% set occ_sorted = occasion_stats | sort(attribute=1, reverse=True) %}
+        {% for occ, count in occ_sorted %}
+        <div class="occ-item">
+          <div class="occ-rank">{{ loop.index }}</div>
+          <div class="occ-icon">{{ occ_icons.get(occ,'✦') }}</div>
+          <div class="occ-name">{{ occ }}</div>
+          <div class="occ-count">{{ count }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title"><span>👤</span> Gender Split</div>
+      </div>
+      <div class="rings-wrap">
+        {% set gender_total = gender_stats | sum(attribute=1) or 1 %}
+        {% set g_colors = {'male':'var(--coral)','female':'var(--gold)'} %}
+        {% set g_icons  = {'male':'👨','female':'👩'} %}
+        {% for g, cnt in gender_stats %}
+        {% set pct = ((cnt / gender_total) * 100) | round | int %}
+        <div class="ring-item">
+          <div class="ring-label">{{ g_icons.get(g,'👤') }} {{ g }}</div>
+          <div class="ring-track">
+            <div class="ring-fill" style="width:0;background:{{ g_colors.get(g,'var(--paper)') }}" data-w="{{ pct }}%"></div>
+          </div>
+          <div class="ring-pct">{{ pct }}%</div>
+          <div class="ring-count">{{ cnt }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <!-- ── WEATHER + OCCASIONS CHART (everyone) ── -->
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title"><span>🌤</span> Weather Breakdown</div>
+      </div>
+      <div class="rings-wrap">
+        {% set weather_total = weather_stats | sum(attribute=1) or 1 %}
+        {% set w_colors = {'hot':'var(--coral)','cold':'#6baed6','rainy':'#a78bfa'} %}
+        {% set w_icons  = {'hot':'☀️','cold':'❄️','rainy':'🌧️'} %}
+        {% for w, cnt in weather_stats %}
+        {% set pct = ((cnt / weather_total) * 100) | round | int %}
+        <div class="ring-item">
+          <div class="ring-label">{{ w_icons.get(w,'🌤') }} {{ w }}</div>
+          <div class="ring-track">
+            <div class="ring-fill" style="width:0;background:{{ w_colors.get(w,'var(--paper)') }}" data-w="{{ pct }}%"></div>
+          </div>
+          <div class="ring-pct">{{ pct }}%</div>
+          <div class="ring-count">{{ cnt }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title"><span>📊</span> Occasions Chart</div>
+      </div>
+      <div class="bar-chart">
+        {% set occ_max = (occasion_stats | map(attribute=1) | max) or 1 %}
+        {% set peak_val = (occasion_stats | sort(attribute=1,reverse=True) | first)[1] if occasion_stats else 0 %}
+        {% for occ, cnt in occasion_stats | sort(attribute=1, reverse=True) %}
+        {% set h = ((cnt / occ_max) * 90) | round | int %}
+        <div class="bar-col">
+          <div class="bar-fill{% if cnt == peak_val %} peak{% endif %}"
+               style="height:4px" data-h="{{ h }}px" title="{{ occ }}: {{ cnt }}"></div>
+          <div class="bar-label">{{ occ[:3] }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RECENT FEEDBACK (everyone — name + rating + comment) ── -->
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title"><span>💬</span> {{ 'Recent Feedback' if is_admin else 'Your Feedback' }}</div>
+      <div class="panel-meta">{{ (total_feedback ~ ' total') if is_admin else (feedbacks|length ~ ' submitted') }}</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Rating</th><th>Comment</th></tr>
+        </thead>
+        <tbody>
+          {% for name, rating, comment in feedbacks %}
+          <tr>
+            <td class="td-name">{{ name or 'Anonymous' }}</td>
+            <td class="td-stars">{{ '★' * rating }}{{ '☆' * (5 - rating) }}</td>
+            <td class="td-comment">{{ comment or '—' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" style="color:var(--paper-dim);text-align:center;padding:1.5rem;">{{ 'No feedback yet.' if is_admin else "You haven't submitted any feedback yet." }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- end dash-wrap -->
+
+{% if is_admin %}
+<!-- ══════════════════════════════════════════════════════
+     ADMIN-ONLY SECTIONS BELOW
+     Emails, login activity, and full per-outfit user records
+     are only ever rendered when is_admin is True.
+     ══════════════════════════════════════════════════════ -->
+
+<div class="section-divider"><span class="section-label">👥 REGISTERED USERS & ACTIVITY</span></div>
+<div class="dash-wrap">
+  <div class="panel mb">
+    <div class="panel-head">
+      <div class="panel-title"><span>📧</span> All Registered Users</div>
+      <div class="panel-meta">{{ total_users }} users</div>
+    </div>
+    <div class="table-wrap">
+      <table class="user-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Email</th>
+            <th>Joined</th>
+            <th>Last Login</th>
+            <th>Last Logout</th>
+            <th>Outfits</th>
+            <th>Likes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in recent_logins %}
+          {% if log.user and loop.changed(log.user_id) %}
+          <tr>
+            <td class="td-dim">{{ loop.index }}</td>
+            <td class="td-email">{{ log.user.email }}</td>
+            <td class="td-dim">{{ log.user.created_at.strftime('%d %b %Y') if log.user.created_at else '—' }}</td>
+            <td class="td-dim">{{ log.logged_at.strftime('%d %b, %H:%M') if log.logged_at else '—' }}</td>
+            <td class="td-dim">{{ log.logged_out_at.strftime('%d %b, %H:%M') if log.logged_out_at else '—' }}</td>
+            <td class="td-dim">{{ log.user.outfits | length if log.user.outfits is defined else '—' }}</td>
+            <td class="td-dim">—</td>
+          </tr>
+          {% endif %}
+          {% else %}
+          <tr><td colspan="7" style="color:var(--paper-dim);text-align:center;padding:1.5rem;">No users yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── RECENT LOGIN LOG ── -->
+  <div class="panel mb">
+    <div class="panel-head">
+      <div class="panel-title"><span>⚡</span> Login Activity Log</div>
+      <div class="panel-meta">Last 50 attempts</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+
+        <thead>
+          <tr><th>Email</th><th>Status</th><th>IP Address</th><th>Signed In</th><th>Signed Out</th></tr>
+        </thead>
+        <tbody>
+          {% for log in recent_logins %}
+          <tr>
+            <td class="td-email">{{ log.user.email if log.user else '—' }}</td>
+            <td><span class="td-badge {{ 'ok' if log.success else 'fail' }}">{{ '✓ Success' if log.success else '✗ Failed' }}</span></td>
+            <td class="td-dim">{{ log.ip_address or '—' }}</td>
+            <td class="td-dim">{{ log.logged_at.strftime('%d %b %Y, %H:%M') if log.logged_at else '—' }}</td>
+            <td class="td-dim">{{ log.logged_out_at.strftime('%d %b %Y, %H:%M') if log.logged_out_at else '—' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" style="color:var(--paper-dim);text-align:center;padding:1.5rem;">No login activity yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── ALL OUTFIT GENERATIONS ── -->
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title"><span>✦</span> All Generated Outfits</div>
+      <div class="panel-meta">{{ total_recommendations }} total</div>
+    </div>
+    <div class="table-wrap">
+      <table style="min-width:600px;">
+        <thead>
+          <tr><th>User</th><th>Occasion</th><th>Weather</th><th>Gender</th><th>Top</th><th>Shoes</th></tr>
+        </thead>
+        <tbody>
+          {% for outfit in recent_outfits %}
+          <tr>
+            <td class="td-email">{{ outfit.user.email if outfit.user else 'guest' }}</td>
+            <td><span class="td-badge {{ outfit.occasion }}">{{ outfit.occasion }}</span></td>
+            <td class="td-dim">{{ outfit.weather }}</td>
+            <td class="td-dim">{{ outfit.gender }}</td>
+            <td class="td-dim" style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ outfit.top }}</td>
+            <td class="td-dim" style="max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ outfit.shoes }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" style="color:var(--paper-dim);text-align:center;padding:1.5rem;">No outfits generated yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     PHOTO UPLOAD PANEL
+     Uses routes from app.py: /admin/upload-outfit, /admin/delete-outfit-photo
+     ══════════════════════════════════════════════════════ -->
+
+<div class="section-divider"><span class="section-label">📷 OUTFIT PHOTOS</span></div>
+<div class="dash-wrap">
+  <div class="panel mb">
+    <div class="panel-head">
+      <div class="panel-title"><span>📷</span> Outfit Photo Library</div>
+      <div class="panel-meta">{{ uploaded_count }}/{{ total_combos }} combos started · {{ fully_uploaded_count }}/{{ total_combos }} complete</div>
+    </div>
+
+    <p style="font-size:0.82rem;color:var(--paper-dim);margin-bottom:1.2rem;line-height:1.5;">
+      Each combo holds up to {{ max_photo_slots }} of your own photos. When someone taps "Alternative," Daily Drape shows a different real photo instead of generating a new AI image. Fill at least one slot per combo to retire the AI fallback for it.
+    </p>
+
+    <!-- FILTER BAR -->
+    <div class="combo-filters">
+      <input type="text" id="comboSearch" class="combo-search" placeholder="Search e.g. female hot college…">
+      <select id="genderFilter" class="combo-select">
+        <option value="">All genders</option>
+        <option value="female">Female</option>
+        <option value="male">Male</option>
+      </select>
+      <select id="weatherFilter" class="combo-select">
+        <option value="">All weather</option>
+        <option value="hot">Hot</option>
+        <option value="cold">Cold</option>
+        <option value="rainy">Rainy</option>
+      </select>
+      <select id="statusFilter" class="combo-select">
+        <option value="">All statuses</option>
+        <option value="empty">Empty</option>
+        <option value="partial">Partial</option>
+        <option value="full">Complete</option>
+      </select>
+    </div>
+
+    <!-- COMBO GRID -->
+    <div class="combo-grid" id="comboGrid">
+      {% for combo in combo_status %}
+      <div class="combo-card"
+           data-gender="{{ combo.gender }}"
+           data-weather="{{ combo.weather }}"
+           data-occasion="{{ combo.occasion }}"
+           data-status="{% if combo.filled_count == 0 %}empty{% elif combo.filled_count == max_photo_slots %}full{% else %}partial{% endif %}">
+
+        <div class="combo-card-head">
+          <div class="combo-tags">
+            <span class="td-badge {{ combo.occasion }}">{{ combo.occasion }}</span>
+            <span class="combo-tag-plain">{{ combo.gender }}</span>
+            <span class="combo-tag-plain">{{ combo.weather }}</span>
+          </div>
+          <div class="combo-progress {% if combo.filled_count == max_photo_slots %}complete{% elif combo.filled_count == 0 %}empty{% endif %}">
+            {{ combo.filled_count }}/{{ max_photo_slots }}
+          </div>
+        </div>
+
+        <div class="combo-outfit-line">{{ combo.top }} · {{ combo.shoes }}</div>
+
+        <div class="slot-row">
+          {% for slot_num in range(1, max_photo_slots + 1) %}
+          <div class="photo-slot" data-slot="{{ slot_num }}">
+            <input type="file"
+                   class="slot-input"
+                   accept=".jpg,.jpeg,.png,.webp"
+                   data-gender="{{ combo.gender }}"
+                   data-weather="{{ combo.weather }}"
+                   data-occasion="{{ combo.occasion }}"
+                   data-slot="{{ slot_num }}"
+                   hidden>
+
+            {% set slot_url = combo.slot_urls.get(slot_num) %}
+            <div class="slot-box {{ 'filled' if slot_url else '' }}" data-trigger-upload>
+              {% if slot_url %}
+                <img src="{{ slot_url }}" alt="Slot {{ slot_num }}" class="slot-img">
+                <button type="button" class="slot-remove" data-action="remove" title="Remove this photo">✕</button>
+              {% else %}
+                <div class="slot-empty">
+                  <span class="slot-plus">+</span>
+                  <span class="slot-num">Slot {{ slot_num }}</span>
+                </div>
+              {% endif %}
+              <div class="slot-uploading">
+                <span class="slot-spinner"></span>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <p id="comboEmptyState" class="combo-empty-state" style="display:none;">No combos match these filters.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  const grid = document.getElementById('comboGrid');
+  if (!grid) return;
+
+  const cards = Array.from(grid.querySelectorAll('.combo-card'));
+
+  // ── Filtering ──
+  const searchInput   = document.getElementById('comboSearch');
+  const genderFilter   = document.getElementById('genderFilter');
+  const weatherFilter  = document.getElementById('weatherFilter');
+  const statusFilter   = document.getElementById('statusFilter');
+  const emptyState     = document.getElementById('comboEmptyState');
+
+  function applyFilters(){
+    const q = searchInput.value.trim().toLowerCase();
+    const g = genderFilter.value;
+    const w = weatherFilter.value;
+    const s = statusFilter.value;
+    let visibleCount = 0;
+
+    cards.forEach(function(card){
+      const hay = (card.dataset.gender + ' ' + card.dataset.weather + ' ' + card.dataset.occasion).toLowerCase();
+      const matchesQuery   = !q || hay.includes(q);
+      const matchesGender  = !g || card.dataset.gender === g;
+      const matchesWeather = !w || card.dataset.weather === w;
+      const matchesStatus  = !s || card.dataset.status === s;
+      const show = matchesQuery && matchesGender && matchesWeather && matchesStatus;
+      card.style.display = show ? '' : 'none';
+      if (show) visibleCount++;
+    });
+
+    emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+  }
+
+  [searchInput, genderFilter, weatherFilter, statusFilter].forEach(function(el){
+    el.addEventListener('input', applyFilters);
+    el.addEventListener('change', applyFilters);
+  });
+
+  // ── Upload / remove behavior ──
+  grid.addEventListener('click', function(e){
+    const trigger = e.target.closest('[data-trigger-upload]');
+    const removeBtn = e.target.closest('[data-action="remove"]');
+
+    if (removeBtn) {
+      e.stopPropagation();
+      handleRemove(removeBtn);
+      return;
+    }
+    if (trigger) {
+      const slot = trigger.closest('.photo-slot');
+      const input = slot.querySelector('.slot-input');
+      input.click();
+    }
+  });
+
+  grid.addEventListener('change', function(e){
+    if (!e.target.classList.contains('slot-input')) return;
+    const file = e.target.files[0];
+    if (!file) return;
+    handleUpload(e.target, file);
+  });
+
+  function setSlotStatus(card){
+    const filled = card.querySelectorAll('.slot-box.filled').length;
+    const max = card.querySelectorAll('.photo-slot').length;
+    const progressEl = card.querySelector('.combo-progress');
+    progressEl.textContent = filled + '/' + max;
+    progressEl.classList.toggle('complete', filled === max);
+    progressEl.classList.toggle('empty', filled === 0);
+    card.dataset.status = filled === 0 ? 'empty' : (filled === max ? 'full' : 'partial');
+  }
+
+  function handleUpload(input, file){
+    const photoSlot = input.closest('.photo-slot');
+    const slotBox = photoSlot.querySelector('.slot-box');
+    const card = input.closest('.combo-card');
+
+    photoSlot.classList.add('is-uploading');
+
+    const formData = new FormData();
+    formData.append('gender', input.dataset.gender);
+    formData.append('weather', input.dataset.weather);
+    formData.append('occasion', input.dataset.occasion);
+    formData.append('slot', input.dataset.slot);
+    formData.append('image', file);
+
+    fetch('/admin/upload-outfit', { method: 'POST', body: formData })
+      .then(function(res){ return res.json(); })
+      .then(function(data){
+        photoSlot.classList.remove('is-uploading');
+        if (!data.success) {
+          alert(data.error || 'Upload failed. Try again.');
+          return;
+        }
+        // Re-render the slot as filled
+        slotBox.classList.add('filled');
+        slotBox.innerHTML =
+          '<img src="' + data.url + '?t=' + Date.now() + '" alt="Slot ' + input.dataset.slot + '" class="slot-img">' +
+          '<button type="button" class="slot-remove" data-action="remove" title="Remove this photo">✕</button>' +
+          '<div class="slot-uploading"><span class="slot-spinner"></span></div>';
+        input.value = '';
+        setSlotStatus(card);
+      })
+      .catch(function(){
+        photoSlot.classList.remove('is-uploading');
+        alert('Upload failed — check your connection and try again.');
+      });
+  }
+
+  function handleRemove(removeBtn){
+    const photoSlot = removeBtn.closest('.photo-slot');
+    const slotBox = photoSlot.querySelector('.slot-box');
+    const input = photoSlot.querySelector('.slot-input');
+    const card = photoSlot.closest('.combo-card');
+    const slotNum = input.dataset.slot;
+
+    if (!confirm('Remove this photo? The combo will fall back to AI generation if no photos remain.')) return;
+
+    photoSlot.classList.add('is-uploading');
+
+    const formData = new FormData();
+    formData.append('gender', input.dataset.gender);
+    formData.append('weather', input.dataset.weather);
+    formData.append('occasion', input.dataset.occasion);
+    formData.append('slot', slotNum);
+
+    fetch('/admin/delete-outfit-photo', { method: 'POST', body: formData })
+      .then(function(res){ return res.json(); })
+      .then(function(data){
+        photoSlot.classList.remove('is-uploading');
+        if (!data.success) {
+          alert(data.error || 'Could not remove photo.');
+          return;
+        }
+        slotBox.classList.remove('filled');
+        slotBox.innerHTML =
+          '<div class="slot-empty"><span class="slot-plus">+</span><span class="slot-num">Slot ' + slotNum + '</span></div>' +
+          '<div class="slot-uploading"><span class="slot-spinner"></span></div>';
+        setSlotStatus(card);
+      })
+      .catch(function(){
+        photoSlot.classList.remove('is-uploading');
+        alert('Could not remove photo — check your connection and try again.');
+      });
+  }
+})();
+</script>
+{% endif %}<!-- end is_admin block -->
+
+<footer class="footer"><p>Made with 💖 by <strong>Vishwa</strong> · Daily Drape © 2026</p></footer>
+
+<script>
+// Count-up animation
+document.querySelectorAll('.stat-val[data-count]').forEach(function(el){
+  var target=parseInt(el.dataset.count)||0;
+  if(!target) return;
+  var dur=900,t0=performance.now();
+  (function step(now){
+    var p=Math.min((now-t0)/dur,1),ease=1-Math.pow(1-p,3);
+    el.textContent=Math.round(target*ease);
+    if(p<1) requestAnimationFrame(step); else el.textContent=target;
+  })(performance.now());
+});
+// Bar chart animate
+requestAnimationFrame(function(){requestAnimationFrame(function(){
+  document.querySelectorAll('.bar-fill[data-h]').forEach(function(b,i){
+    b.style.transition='height 0.8s cubic-bezier(0.16,1,0.3,1) '+(i*0.07)+'s';
+    b.style.height=b.dataset.h;
+  });
+});});
+// Ring bars animate
+requestAnimationFrame(function(){requestAnimationFrame(function(){
+  document.querySelectorAll('.ring-fill[data-w]').forEach(function(f,i){
+    f.style.transition='width 0.9s cubic-bezier(0.16,1,0.3,1) '+(i*0.1)+'s';
+    f.style.width=f.dataset.w;
+  });
+});});
+</script>
+</body>
+</html>

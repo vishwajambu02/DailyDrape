@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Drape — Wear the Moment</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0c0a09; --ink-2:#16130f;
+  --surface:rgba(22,19,15,0.6); --surface2:rgba(245,240,230,0.035);
+  --rule:rgba(245,240,230,0.09);
+  --coral:#e3613f; --coral-dim:rgba(227,97,63,0.14); --coral-glow:rgba(227,97,63,0.06);
+  --gold:#c9a876; --gold-dim:rgba(201,168,118,0.12);
+  --paper:#f5f0e6; --paper-dim:rgba(245,240,230,0.5); --paper-faint:rgba(245,240,230,0.16);
+  --display:'Fraunces',serif; --body:'Inter',sans-serif; --mono:'Space Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--body);background:var(--ink);color:var(--paper);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}}
+
+/* ── ATMOSPHERE ── */
+.grid-bg{position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(245,240,230,0.022) 1px,transparent 1px),linear-gradient(90deg,rgba(245,240,230,0.022) 1px,transparent 1px);background-size:60px 60px;}
+.radial-top{position:fixed;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:500px;background:radial-gradient(ellipse,rgba(227,97,63,0.1) 0%,transparent 65%);pointer-events:none;z-index:0;}
+.radial-br{position:fixed;bottom:-180px;right:-150px;width:500px;height:500px;background:radial-gradient(circle,rgba(201,168,118,0.065) 0%,transparent 65%);pointer-events:none;z-index:0;}
+.float-icons{position:fixed;inset:0;pointer-events:none;z-index:0;}
+.float-icon{position:absolute;opacity:0;animation:floatIcon 13s ease-in-out infinite;color:var(--gold);}
+@keyframes floatIcon{0%{opacity:0;transform:translateY(18px) rotate(-7deg);}15%{opacity:0.1;}85%{opacity:0.05;}100%{opacity:0;transform:translateY(-58px) rotate(7deg);}}
+
+/* ── SPLASH ── */
+#splash{position:fixed;inset:0;z-index:999;background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.3rem;transition:opacity 0.7s ease,transform 0.7s ease;}
+#splash.hide{opacity:0;pointer-events:none;transform:scale(1.04);}
+.splash-mark{font-family:var(--mono);font-size:0.72rem;color:var(--coral);border:1px solid var(--coral);padding:0.22rem 0.55rem;border-radius:4px;letter-spacing:0.1em;margin-bottom:0.8rem;opacity:0;animation:markIn 0.5s ease 0.1s forwards;}
+@keyframes markIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.splash-logo{font-family:var(--display);font-weight:700;font-size:clamp(2.2rem,7vw,3.8rem);letter-spacing:-1.5px;opacity:0;animation:markIn 0.8s cubic-bezier(0.16,1,0.3,1) 0.25s forwards;}
+.splash-tag{font-family:var(--mono);font-size:0.68rem;color:var(--paper-dim);letter-spacing:0.18em;text-transform:uppercase;margin-top:0.4rem;opacity:0;animation:markIn 0.5s ease 0.65s forwards;}
+.splash-bar{width:120px;height:2px;background:var(--rule);border-radius:10px;margin-top:1.4rem;overflow:hidden;opacity:0;animation:markIn 0.4s ease 0.9s forwards;}
+.splash-fill{height:100%;width:0;background:linear-gradient(90deg,var(--coral),var(--gold));animation:fillBar 1.3s 1s ease forwards;}
+@keyframes fillBar{to{width:100%;}}
+
+/* ── NAV ── */
+.navbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;background:rgba(12,10,9,0.84);backdrop-filter:blur(20px);border-bottom:1px solid var(--rule);}
+.logo{display:flex;align-items:baseline;gap:0.5rem;text-decoration:none;}
+.logo-mark{font-family:var(--mono);font-size:0.65rem;color:var(--coral);border:1px solid var(--coral);padding:0.1rem 0.38rem;border-radius:3px;letter-spacing:0.04em;}
+.logo-text{font-family:var(--display);font-size:1.25rem;font-weight:600;color:var(--paper);letter-spacing:-0.2px;}
+.nav-right{display:flex;align-items:center;gap:0.55rem;}
+.nav-pill{font-size:0.82rem;font-weight:500;color:var(--paper-dim);text-decoration:none;padding:0.38rem 0.9rem;border:1px solid var(--rule);border-radius:100px;transition:all 0.2s;white-space:nowrap;}
+.nav-pill:hover{color:var(--paper);border-color:rgba(227,97,63,0.4);background:var(--coral-dim);}
+.nav-pill.logout:hover{border-color:#d64545;color:#e8807a;background:rgba(214,69,69,0.08);}
+.nav-pill.fav{border-color:rgba(201,168,118,0.2);}
+.nav-pill.fav:hover{border-color:rgba(201,168,118,0.5);color:var(--gold);background:var(--gold-dim);}
+
+/* ── HERO ── */
+.hero{position:relative;z-index:10;padding:4.5rem 1.5rem 1rem;text-align:center;}
+.hero-kicker{display:inline-flex;align-items:center;gap:0.5rem;font-family:var(--mono);font-size:0.67rem;letter-spacing:0.08em;color:var(--gold);background:var(--gold-dim);border:1px solid rgba(201,168,118,0.18);border-radius:100px;padding:0.32rem 0.95rem;margin-bottom:1.5rem;}
+.hero-kicker::before{content:'●';font-size:0.45rem;color:var(--coral);animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.hero-title{font-family:var(--display);font-size:clamp(2.6rem,7vw,4.6rem);font-weight:600;line-height:1.04;letter-spacing:-2px;margin-bottom:1rem;}
+.hero-title em{font-style:italic;font-weight:500;color:var(--coral);}
+.hero-sub{font-size:1rem;color:var(--paper-dim);max-width:380px;margin:0 auto;line-height:1.6;}
+
+/* ── MARQUEE ── */
+.marquee-wrap{position:relative;z-index:10;overflow:hidden;padding:1.4rem 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:2rem 0;}
+.marquee-track{display:flex;gap:2.5rem;animation:marquee 28s linear infinite;white-space:nowrap;}
+.marquee-track:hover{animation-play-state:paused;}
+.marquee-item{font-family:var(--mono);font-size:0.7rem;letter-spacing:0.08em;color:var(--paper-faint);text-transform:uppercase;display:flex;align-items:center;gap:0.7rem;flex-shrink:0;}
+.marquee-dot{width:4px;height:4px;background:var(--coral);border-radius:50%;flex-shrink:0;opacity:0.6;}
+@keyframes marquee{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+
+/* ── FORM ── */
+.form-section{position:relative;z-index:10;max-width:560px;margin:0 auto;padding:0 1.5rem 2rem;}
+.form-card{background:var(--ink-2);border:1px solid var(--rule);border-radius:26px;padding:2.6rem 2.2rem;position:relative;overflow:hidden;box-shadow:0 28px 72px rgba(0,0,0,0.5),0 0 0 1px rgba(245,240,230,0.04);animation:fadeUp 0.65s cubic-bezier(0.16,1,0.3,1) both;}
+.form-card::before{content:'';position:absolute;top:0;left:2rem;right:2rem;height:1px;background:linear-gradient(90deg,transparent,rgba(227,97,63,0.45),transparent);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:translateY(0);}}
+
+.selector-group{margin-bottom:1.8rem;}
+.selector-label{font-family:var(--mono);font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--paper-faint);margin-bottom:0.85rem;display:flex;align-items:center;gap:0.4rem;}
+.card-options{display:flex;gap:0.55rem;flex-wrap:wrap;}
+.card-opt{flex:1;min-width:78px;padding:0.9rem 0.5rem;background:var(--surface2);border:1.5px solid var(--rule);border-radius:13px;color:var(--paper-dim);font-family:var(--body);font-size:0.8rem;font-weight:600;text-align:center;cursor:pointer;transition:all 0.2s;display:flex;flex-direction:column;align-items:center;gap:0.4rem;user-select:none;}
+.card-opt .opt-icon{font-size:1.35rem;line-height:1;}
+.card-opt:hover{border-color:rgba(227,97,63,0.35);color:var(--paper);background:var(--coral-dim);transform:translateY(-2px);}
+.card-opt.selected{border-color:var(--coral);background:var(--coral-dim);color:var(--coral);box-shadow:0 0 0 3px rgba(227,97,63,0.09),inset 0 0 16px rgba(227,97,63,0.04);}
+.card-opt.selected .opt-icon{filter:saturate(1.2);}
+.hidden-select{display:none;}
+.divider{height:1px;background:var(--rule);margin:0.2rem 0 1.8rem;}
+
+.btn-gen{width:100%;padding:1.15rem;border:none;border-radius:13px;background:linear-gradient(135deg,#f5f0e6,#e8dcc8);color:var(--ink);font-family:var(--body);font-size:1rem;font-weight:700;cursor:pointer;transition:all 0.25s;display:flex;align-items:center;justify-content:center;gap:0.6rem;position:relative;overflow:hidden;letter-spacing:-0.1px;}
+.btn-gen .shine{position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(227,97,63,0.15) 50%,transparent 60%);transform:translateX(-100%);animation:shine 3.5s ease-in-out infinite 1.2s;}
+@keyframes shine{0%{transform:translateX(-100%);}30%{transform:translateX(110%);}100%{transform:translateX(110%);}}
+.btn-gen:hover{transform:translateY(-3px);box-shadow:0 14px 36px rgba(227,97,63,0.22);}
+.btn-gen:active{transform:scale(0.97);}
+.btn-gen.loading{pointer-events:none;opacity:0.8;}
+.btn-gen .spinner{display:none;width:18px;height:18px;border:2px solid rgba(12,10,9,0.25);border-top-color:var(--ink);border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;}
+.btn-gen.loading .spinner{display:block;}
+.btn-gen.loading .btn-label{display:none;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── LOADING OVERLAY ── */
+.overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(12,10,9,0.94);backdrop-filter:blur(16px);align-items:center;justify-content:center;flex-direction:column;gap:1.8rem;}
+.overlay.active{display:flex;}
+.overlay-ring{position:relative;width:60px;height:60px;}
+.overlay-ring::before,.overlay-ring::after{content:'';position:absolute;inset:0;border-radius:50%;border:2.5px solid transparent;}
+.overlay-ring::before{border-top-color:var(--coral);border-right-color:var(--gold);animation:spin 0.9s linear infinite;}
+.overlay-ring::after{inset:8px;border-top-color:rgba(245,240,230,0.2);animation:spin 1.2s linear infinite reverse;}
+.overlay-title{font-family:var(--display);font-size:1.5rem;font-weight:600;color:var(--paper);letter-spacing:-0.3px;}
+.overlay-hint{font-size:0.86rem;color:var(--paper-dim);font-family:var(--mono);letter-spacing:0.04em;}
+
+/* ── PROOF STRIP ── */
+.proof-strip{position:relative;z-index:10;display:flex;justify-content:center;gap:0;flex-wrap:nowrap;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin-bottom:0;}
+.proof-item{flex:1;text-align:center;padding:1.4rem 1rem;border-right:1px solid var(--rule);}
+.proof-item:last-child{border-right:none;}
+.proof-num{font-family:var(--display);font-size:1.4rem;font-weight:700;color:var(--paper);}
+.proof-label{font-family:var(--mono);font-size:0.58rem;color:var(--paper-faint);letter-spacing:0.06em;margin-top:0.15rem;}
+
+/* ── FEATURES ── */
+.features-section{position:relative;z-index:10;max-width:860px;margin:0 auto;padding:4rem 1.5rem 2rem;}
+.features-heading{text-align:center;margin-bottom:2.5rem;}
+.features-kicker{font-family:var(--mono);font-size:0.66rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--paper-faint);margin-bottom:0.5rem;}
+.features-title{font-family:var(--display);font-size:clamp(1.6rem,3vw,2.2rem);font-weight:700;letter-spacing:-0.5px;}
+.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+.feature-card{background:var(--ink-2);border:1px solid var(--rule);border-radius:18px;padding:1.6rem;transition:all 0.25s;}
+.feature-card:hover{border-color:rgba(245,240,230,0.16);transform:translateY(-2px);}
+.feature-icon{font-size:1.8rem;margin-bottom:0.8rem;}
+.feature-title{font-weight:700;font-size:0.95rem;margin-bottom:0.4rem;}
+.feature-desc{font-size:0.83rem;color:var(--paper-dim);line-height:1.55;}
+
+/* ── FOOTER ── */
+.footer{position:relative;z-index:10;text-align:center;padding:1.8rem;font-size:0.8rem;color:var(--paper-faint);border-top:1px solid var(--rule);}
+.footer strong{color:rgba(245,240,230,0.35);}
+
+@media(max-width:700px){
+  .navbar{padding:0.8rem 1rem;}
+  .form-section{padding:0 1rem 2rem;}
+  .feature-grid{grid-template-columns:1fr;}
+  .proof-strip{flex-wrap:wrap;}
+  .proof-item{min-width:33%;}
+  .nav-pill.fav,.nav-pill[href="/admin"]{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <span class="splash-mark">DD</span>
+  <p class="splash-logo">Daily Drape</p>
+  <p class="splash-tag">Wear the Moment</p>
+  <div class="splash-bar"><div class="splash-fill"></div></div>
+</div>
+
+<div class="grid-bg"></div>
+<div class="radial-top"></div>
+<div class="radial-br"></div>
+<div class="float-icons" id="floatIcons"></div>
+
+<!-- NAV -->
+<nav class="navbar">
+  <a class="logo" href="/"><span class="logo-mark">DD</span><span class="logo-text">Daily Drape</span></a>
+  <div class="nav-right">
+    <a href="/favorites" class="nav-pill fav">❤ Wardrobe</a>
+    <a href="/feedback-page" class="nav-pill">Reviews</a>
+    <a href="/admin" class="nav-pill">Dashboard</a>
+    <a href="/logout" class="nav-pill logout">Sign out</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-kicker">AI STYLING ENGINE · LIVE</div>
+  <h1 class="hero-title">What are you<br><em>wearing today?</em></h1>
+  <p class="hero-sub">Tell us the vibe — we'll build the perfect outfit in seconds. No scrolling, no guessing.</p>
+</div>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee-track" id="marqueeTrack"></div>
+</div>
+
+<!-- FORM -->
+<div class="form-section">
+  <div class="form-card">
+    <form action="/result" method="POST" id="outfitForm">
+      <select name="gender"   class="hidden-select" id="genderVal"><option value="male">male</option><option value="female">female</option></select>
+      <select name="weather"  class="hidden-select" id="weatherVal"><option value="hot">hot</option><option value="cold">cold</option><option value="rainy">rainy</option></select>
+      <select name="occasion" class="hidden-select" id="occasionVal"><option value="casual">casual</option><option value="office">office</option><option value="party">party</option><option value="date">date</option><option value="wedding">wedding</option><option value="college">college</option></select>
+
+      <div class="selector-group">
+        <div class="selector-label">👤 Gender</div>
+        <div class="card-options" id="genderCards">
+          <div class="card-opt selected" data-val="male"   onclick="pick('gender',this)"><span class="opt-icon">👨</span>Male</div>
+          <div class="card-opt"          data-val="female" onclick="pick('gender',this)"><span class="opt-icon">👩</span>Female</div>
+        </div>
+      </div>
+
+      <div class="selector-group">
+        <div class="selector-label">🌤 Weather</div>
+        <div class="card-options" id="weatherCards">
+          <div class="card-opt selected" data-val="hot"   onclick="pick('weather',this)"><span class="opt-icon">☀️</span>Hot</div>
+          <div class="card-opt"          data-val="cold"  onclick="pick('weather',this)"><span class="opt-icon">❄️</span>Cold</div>
+          <div class="card-opt"          data-val="rainy" onclick="pick('weather',this)"><span class="opt-icon">🌧️</span>Rainy</div>
+        </div>
+      </div>
+
+      <div class="selector-group">
+        <div class="selector-label">🎯 Occasion</div>
+        <div class="card-options" id="occasionCards">
+          <div class="card-opt"          data-val="party"   onclick="pick('occasion',this)"><span class="opt-icon">🎊</span>Party</div>
+          <div class="card-opt"          data-val="date"    onclick="pick('occasion',this)"><span class="opt-icon">💕</span>Date</div>
+          <div class="card-opt"          data-val="wedding" onclick="pick('occasion',this)"><span class="opt-icon">💍</span>Wedding</div>
+          <div class="card-opt"          data-val="college" onclick="pick('occasion',this)"><span class="opt-icon">🎓</span>College</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <button type="submit" class="btn-gen" id="genBtn">
+        <div class="shine"></div>
+        <span class="btn-label">✦ Generate My Outfit</span>
+        <div class="spinner"></div>
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- PROOF STRIP -->
+<div class="proof-strip">
+  <div class="proof-item">
+    <div class="proof-num">{{ total_outfits }}+</div>
+    <div class="proof-label">Looks Styled</div>
+  </div>
+  <div class="proof-item">
+    <div class="proof-num">1.8s</div>
+    <div class="proof-label">Avg Generation</div>
+  </div>
+  <div class="proof-item">
+    <div class="proof-num">{{ avg_rating }}★</div>
+    <div class="proof-label">Avg Rating</div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div class="features-section">
+  <div class="features-heading">
+    <div class="features-kicker">Why Daily Drape</div>
+    <h2 class="features-title">Styling made effortless</h2>
+  </div>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🎯</div>
+      <div class="feature-title">Context-aware picks</div>
+      <div class="feature-desc">Every outfit is matched to your exact occasion, weather, and style — never a generic suggestion.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">❤</div>
+      <div class="feature-title">Save your wardrobe</div>
+      <div class="feature-desc">Love a look? Save it instantly and revisit your entire wardrobe anytime, anywhere.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">↻</div>
+      <div class="feature-title">Endless alternatives</div>
+      <div class="feature-desc">Not feeling it? Tap once for a completely different outfit that still fits the vibe.</div>
+    </div>
+  </div>
+</div>
+
+<!-- OVERLAY -->
+<div class="overlay" id="overlay">
+  <div class="overlay-ring"></div>
+  <div class="overlay-title">Styling your look…</div>
+  <div class="overlay-hint" id="overlayHint">Consulting the fashion oracle ✦</div>
+</div>
+
+<footer class="footer"><p>Made with 💖 by <strong>Vishwa</strong> · Daily Drape © 2026</p></footer>
+
+{% if session.get('user_email') and not current_user_has_password %}
+<div class="nudge-banner">
+  ⚡ Speed up your logins — 
+  <a href="/set-password">Set a password</a>
+</div>
+{% endif %}
+
+<script>
+// floating icons
+var icons = ['✦','◆','✦','◇','✦','◆'];
+var fi = document.getElementById('floatIcons');
+icons.forEach(function(icon, i){
+  var el = document.createElement('div');
+  el.className = 'float-icon';
+  el.textContent = icon;
+  el.style.cssText = 'left:'+(5+Math.random()*90)+'%;top:'+(10+Math.random()*80)+'%;'+
+    'animation-delay:'+(i*1.3)+'s;animation-duration:'+(10+Math.random()*8)+'s;'+
+    'font-size:'+(0.8+Math.random()*0.7)+'rem';
+  fi.appendChild(el);
+});
+
+// marquee
+var items = ['Hot Weather','Cold Weather','Rainy Days','Casual Fridays','Office Style','Party Night','First Dates','Wedding Guest','College Fits','Weekend Brunch','Airport Look','Evening Out'];
+var track = document.getElementById('marqueeTrack');
+var doubled = items.concat(items);
+doubled.forEach(function(item){
+  var el = document.createElement('span');
+  el.className = 'marquee-item';
+  el.innerHTML = '<span class="marquee-dot"></span>' + item;
+  track.appendChild(el);
+});
+
+// splash
+window.addEventListener('load', function(){
+  setTimeout(function(){
+    var s = document.getElementById('splash');
+    if(s){ s.classList.add('hide'); setTimeout(function(){ s.style.display='none'; }, 700); }
+  }, 1800);
+});
+
+// pick card
+var selectMap = { gender:'genderVal', weather:'weatherVal', occasion:'occasionVal' };
+function pick(group, el){
+  el.parentElement.querySelectorAll('.card-opt').forEach(function(c){ c.classList.remove('selected'); });
+  el.classList.add('selected');
+  document.getElementById(selectMap[group]).value = el.getAttribute('data-val');
+}
+
+// overlay
+var hints = ['Consulting the fashion oracle ✦','Matching colours to your vibe…','Picking perfect accessories…','Almost runway-ready…','Finalising your look…'];
+var hi = 0;
+document.getElementById('outfitForm').addEventListener('submit', function(){
+  document.getElementById('genBtn').classList.add('loading');
+  document.getElementById('overlay').classList.add('active');
+  setInterval(function(){
+    hi = (hi+1) % hints.length;
+    document.getElementById('overlayHint').textContent = hints[hi];
+  }, 2000);
+});
+</script>
+</body>
+</html>

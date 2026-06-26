@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feedback — Daily Drape</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0c0a09; --ink-2:#16130f; --surface:rgba(22,19,15,0.6); --surface2:rgba(245,240,230,0.04);
+  --rule:rgba(245,240,230,0.1);
+  --coral:#e3613f; --coral-dim:rgba(227,97,63,0.14);
+  --gold:#c9a876; --gold-dim:rgba(201,168,118,0.1);
+  --paper:#f5f0e6; --paper-dim:rgba(245,240,230,0.55); --paper-faint:rgba(245,240,230,0.18);
+  --display:'Fraunces',serif; --body:'Inter',sans-serif; --mono:'Space Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--body);background:var(--ink);color:var(--paper);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;}}
+.grid-bg{position:fixed;inset:0;background-image:linear-gradient(rgba(245,240,230,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(245,240,230,0.025) 1px,transparent 1px);background-size:60px 60px;}
+.glow-top{position:fixed;top:-150px;left:50%;transform:translateX(-50%);width:700px;height:400px;background:radial-gradient(ellipse,rgba(227,97,63,0.07) 0%,transparent 70%);pointer-events:none;}
+
+/* NAV */
+.navbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;background:rgba(12,10,9,0.82);backdrop-filter:blur(16px);border-bottom:1px solid var(--rule);}
+.logo{display:flex;align-items:baseline;gap:0.5rem;text-decoration:none;}
+.logo-mark{font-family:var(--mono);font-size:0.65rem;color:var(--coral);border:1px solid var(--coral);padding:0.1rem 0.35rem;border-radius:3px;letter-spacing:0.04em;}
+.logo-text{font-family:var(--display);font-size:1.25rem;font-weight:600;color:var(--paper);letter-spacing:-0.2px;}
+.nav-right{display:flex;align-items:center;gap:0.6rem;}
+.nav-pill{font-size:0.82rem;font-weight:500;color:var(--paper-dim);text-decoration:none;padding:0.4rem 0.95rem;border:1px solid var(--rule);border-radius:100px;transition:all 0.2s;}
+.nav-pill:hover{color:var(--paper);border-color:rgba(227,97,63,0.4);background:var(--coral-dim);}
+.nav-pill.active{border-color:rgba(227,97,63,0.35);color:var(--coral);}
+.nav-pill.logout:hover{border-color:#d64545;color:#e8807a;background:rgba(214,69,69,0.08);}
+
+/* PAGE */
+.page{position:relative;z-index:10;max-width:820px;margin:0 auto;padding:3rem 1.5rem 5rem;}
+
+.page-header{margin-bottom:2.8rem;animation:fadeUp 0.5s ease both;}
+.page-kicker{font-family:var(--mono);font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--coral);margin-bottom:0.5rem;}
+.page-title{font-family:var(--display);font-size:clamp(2rem,4vw,2.8rem);font-weight:700;letter-spacing:-1px;margin-bottom:0.4rem;}
+.page-title em{font-style:italic;color:var(--coral);}
+.page-sub{font-size:0.92rem;color:var(--paper-dim);}
+
+/* stats bar */
+.stats-bar{display:flex;gap:1rem;margin-bottom:2.5rem;animation:fadeUp 0.5s 0.1s ease both;flex-wrap:wrap;}
+.stat-pill{flex:1;min-width:140px;background:var(--ink-2);border:1px solid var(--rule);border-radius:16px;padding:1.2rem 1.4rem;text-align:center;}
+.stat-pill .num{font-family:var(--display);font-size:2rem;font-weight:700;color:var(--paper);}
+.stat-pill .lbl{font-family:var(--mono);font-size:0.6rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--paper-faint);margin-top:0.2rem;}
+
+/* feedback cards */
+.feedback-list{display:flex;flex-direction:column;gap:1rem;margin-bottom:2.5rem;}
+.feedback-card{background:var(--ink-2);border:1px solid var(--rule);border-radius:18px;padding:1.4rem 1.6rem;animation:fadeUp 0.5s ease both;transition:border-color 0.2s;}
+.feedback-card:hover{border-color:rgba(245,240,230,0.18);}
+
+.fc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;}
+.fc-name{font-weight:600;font-size:0.95rem;color:var(--paper);}
+.fc-stars{color:#f9c74f;letter-spacing:2px;font-size:0.9rem;}
+
+.fc-meta{display:flex;gap:0.8rem;margin-bottom:0.7rem;flex-wrap:wrap;}
+.fc-badge{font-family:var(--mono);font-size:0.6rem;letter-spacing:0.06em;padding:0.2rem 0.6rem;border-radius:100px;text-transform:capitalize;}
+.fc-badge.occasion{background:var(--coral-dim);color:var(--coral);border:1px solid rgba(227,97,63,0.2);}
+.fc-badge.weather{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(201,168,118,0.2);}
+
+.fc-comment{font-size:0.88rem;color:var(--paper-dim);line-height:1.6;font-style:italic;}
+.fc-comment.none{color:var(--paper-faint);}
+.fc-date{font-family:var(--mono);font-size:0.58rem;color:var(--paper-faint);margin-top:0.7rem;letter-spacing:0.04em;}
+
+/* empty state */
+.empty-state{text-align:center;padding:3rem 2rem;animation:fadeUp 0.5s ease both;}
+.empty-icon{font-size:3rem;margin-bottom:1rem;opacity:0.3;}
+.empty-title{font-family:var(--display);font-size:1.4rem;font-weight:700;margin-bottom:0.5rem;}
+.empty-sub{font-size:0.88rem;color:var(--paper-dim);}
+
+/* CTA card */
+.cta-card{background:var(--ink-2);border:1px solid var(--rule);border-radius:22px;padding:2.4rem;text-align:center;position:relative;overflow:hidden;animation:fadeUp 0.6s 0.2s ease both;}
+.cta-card::before{content:'';position:absolute;top:0;left:2rem;right:2rem;height:1px;background:linear-gradient(90deg,transparent,rgba(227,97,63,0.5),transparent);}
+.cta-icon{font-size:2.8rem;margin-bottom:1rem;}
+.cta-title{font-family:var(--display);font-size:1.5rem;font-weight:700;margin-bottom:0.5rem;}
+.cta-sub{font-size:0.9rem;color:var(--paper-dim);margin-bottom:1.8rem;max-width:340px;margin-left:auto;margin-right:auto;}
+.btn-cta{display:inline-flex;align-items:center;gap:0.5rem;padding:0.9rem 2rem;border:none;border-radius:12px;background:linear-gradient(135deg,var(--paper),#e8dcc8);color:var(--ink);font-family:var(--body);font-size:0.95rem;font-weight:700;text-decoration:none;cursor:pointer;transition:all 0.2s;}
+.btn-cta:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(227,97,63,0.2);}
+
+/* section label */
+.section-label{font-family:var(--mono);font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--paper-faint);margin-bottom:1.2rem;display:flex;align-items:center;gap:0.5rem;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--rule);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+@media(max-width:600px){
+  .navbar{padding:0.8rem 1rem;}
+  .page{padding:2rem 1rem 4rem;}
+  .stats-bar{flex-direction:column;}
+}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="glow-top"></div>
+
+<nav class="navbar">
+  <a class="logo" href="/"><span class="logo-mark">DD</span><span class="logo-text">Daily Drape</span></a>
+  <div class="nav-right">
+    <a href="/favorites" class="nav-pill">❤ Wardrobe</a>
+    <a href="/feedback-page" class="nav-pill active">Feedback</a>
+    <a href="/" class="nav-pill">New Look</a>
+    <a href="/logout" class="nav-pill logout">Sign out</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <div class="page-kicker">⭐ Your Reviews</div>
+    <h1 class="page-title">Your <em>feedback</em></h1>
+    <p class="page-sub">Every rating you've given helps Daily Drape style you better.</p>
+  </div>
+
+  {% if feedbacks %}
+    <!-- stats -->
+    {% set avg = (feedbacks | map(attribute='rating') | sum) / feedbacks | length %}
+    <div class="stats-bar">
+      <div class="stat-pill">
+        <div class="num">{{ feedbacks | length }}</div>
+        <div class="lbl">Reviews Given</div>
+      </div>
+      <div class="stat-pill">
+        <div class="num">{{ "%.1f" | format(avg) }}★</div>
+        <div class="lbl">Avg Rating</div>
+      </div>
+      <div class="stat-pill">
+        <div class="num">{{ feedbacks | selectattr('rating', 'ge', 4) | list | length }}</div>
+        <div class="lbl">Loved Outfits</div>
+      </div>
+    </div>
+
+    <div class="section-label">Recent feedback</div>
+    <div class="feedback-list">
+      {% for fb in feedbacks %}
+      <div class="feedback-card" style="animation-delay:{{ loop.index0 * 0.05 }}s">
+        <div class="fc-top">
+          <span class="fc-name">{{ fb.name or 'Anonymous' }}</span>
+          <span class="fc-stars">
+            {% for i in range(fb.rating | int) %}★{% endfor %}{% for i in range(5 - fb.rating | int) %}☆{% endfor %}
+          </span>
+        </div>
+        <div class="fc-meta">
+          {% if fb.outfit %}
+            <span class="fc-badge occasion">{{ fb.outfit.occasion }}</span>
+            <span class="fc-badge weather">{{ fb.outfit.weather }}</span>
+          {% endif %}
+        </div>
+        {% if fb.comments %}
+          <p class="fc-comment">"{{ fb.comments }}"</p>
+        {% else %}
+          <p class="fc-comment none">No comment left.</p>
+        {% endif %}
+        <div class="fc-date">{{ fb.submitted_at.strftime('%d %b %Y · %H:%M') if fb.submitted_at else '' }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">⭐</div>
+      <h2 class="empty-title">No reviews yet</h2>
+      <p class="empty-sub">After generating an outfit, give it a rating and it'll appear here.</p>
+    </div>
+  {% endif %}
+
+  <!-- CTA to generate new outfit -->
+  <div class="cta-card">
+    <div class="cta-icon">✦</div>
+    <h3 class="cta-title">Style a new look today</h3>
+    <p class="cta-sub">Tell us your occasion and weather — we'll build the perfect outfit in seconds.</p>
+    <a href="/" class="btn-cta">✦ Generate My Outfit</a>
+  </div>
+</div>
+
+<footer style="position:relative;z-index:1;text-align:center;padding:1.5rem;font-size:0.8rem;color:rgba(245,240,230,0.18);border-top:1px solid rgba(245,240,230,0.1);">
+  Made with 💖 by <strong style="color:rgba(245,240,230,0.4)">Vishwa</strong> · Daily Drape © 2026
+</footer>
+</body>
+</html>

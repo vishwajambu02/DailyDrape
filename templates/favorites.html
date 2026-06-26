@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Wardrobe — Daily Drape</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0c0a09; --ink-2:#16130f; --surface:rgba(22,19,15,0.6); --surface2:rgba(245,240,230,0.04);
+  --rule:rgba(245,240,230,0.1);
+  --coral:#e3613f; --coral-dim:rgba(227,97,63,0.14);
+  --gold:#c9a876; --gold-dim:rgba(201,168,118,0.1);
+  --paper:#f5f0e6; --paper-dim:rgba(245,240,230,0.55); --paper-faint:rgba(245,240,230,0.18);
+  --display:'Fraunces',serif; --body:'Inter',sans-serif; --mono:'Space Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--body);background:var(--ink);color:var(--paper);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;}}
+.grid-bg{position:fixed;inset:0;background-image:linear-gradient(rgba(245,240,230,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(245,240,230,0.025) 1px,transparent 1px);background-size:60px 60px;}
+.glow-top{position:fixed;top:-150px;left:50%;transform:translateX(-50%);width:700px;height:400px;background:radial-gradient(ellipse,rgba(201,168,118,0.08) 0%,transparent 70%);pointer-events:none;}
+
+/* NAV */
+.navbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;background:rgba(12,10,9,0.82);backdrop-filter:blur(16px);border-bottom:1px solid var(--rule);}
+.logo{display:flex;align-items:baseline;gap:0.5rem;text-decoration:none;}
+.logo-mark{font-family:var(--mono);font-size:0.65rem;color:var(--coral);border:1px solid var(--coral);padding:0.1rem 0.35rem;border-radius:3px;letter-spacing:0.04em;}
+.logo-text{font-family:var(--display);font-size:1.25rem;font-weight:600;color:var(--paper);letter-spacing:-0.2px;}
+.nav-right{display:flex;align-items:center;gap:0.6rem;}
+.nav-pill{font-size:0.82rem;font-weight:500;color:var(--paper-dim);text-decoration:none;padding:0.4rem 0.95rem;border:1px solid var(--rule);border-radius:100px;transition:all 0.2s;}
+.nav-pill:hover{color:var(--paper);border-color:rgba(227,97,63,0.4);background:var(--coral-dim);}
+.nav-pill.active{border-color:rgba(201,168,118,0.4);color:var(--gold);}
+.nav-pill.logout:hover{border-color:#d64545;color:#e8807a;background:rgba(214,69,69,0.08);}
+
+/* PAGE */
+.page{position:relative;z-index:10;max-width:1000px;margin:0 auto;padding:3rem 1.5rem 5rem;}
+.page-header{margin-bottom:2.8rem;animation:fadeUp 0.5s ease both;}
+.page-kicker{font-family:var(--mono);font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);margin-bottom:0.5rem;}
+.page-title{font-family:var(--display);font-size:clamp(2rem,4vw,2.8rem);font-weight:700;letter-spacing:-1px;margin-bottom:0.4rem;}
+.page-title em{font-style:italic;color:var(--coral);}
+.page-sub{font-size:0.92rem;color:var(--paper-dim);}
+
+/* grid */
+.wardrobe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.2rem;}
+.outfit-card{background:var(--ink-2);border:1px solid var(--rule);border-radius:20px;overflow:hidden;transition:all 0.25s;animation:fadeUp 0.5s ease both;position:relative;}
+.outfit-card:hover{border-color:rgba(227,97,63,0.3);transform:translateY(-3px);box-shadow:0 16px 40px rgba(0,0,0,0.4);}
+
+.card-header{padding:1.4rem 1.4rem 0;display:flex;align-items:flex-start;justify-content:space-between;}
+.card-badges{display:flex;flex-direction:column;gap:0.35rem;}
+.badge{font-family:var(--mono);font-size:0.6rem;letter-spacing:0.07em;padding:0.22rem 0.65rem;border-radius:100px;text-transform:capitalize;display:inline-block;}
+.badge.occasion{background:var(--coral-dim);color:var(--coral);border:1px solid rgba(227,97,63,0.25);}
+.badge.weather{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(201,168,118,0.2);}
+.heart-icon{color:var(--coral);font-size:1.2rem;flex-shrink:0;margin-left:0.5rem;}
+
+.card-pieces{padding:1.2rem 1.4rem;}
+.piece-row{display:flex;align-items:center;gap:0.7rem;padding:0.55rem 0;border-bottom:1px solid var(--rule);}
+.piece-row:last-child{border-bottom:none;}
+.piece-emoji{font-size:1.2rem;flex-shrink:0;width:28px;text-align:center;}
+.piece-info{min-width:0;}
+.piece-type{font-family:var(--mono);font-size:0.55rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--paper-faint);margin-bottom:0.15rem;}
+.piece-name{font-size:0.84rem;font-weight:500;color:var(--paper);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.piece-name.empty{color:var(--paper-faint);font-style:italic;}
+
+.card-footer{padding:0 1.4rem 1.4rem;display:flex;align-items:center;justify-content:space-between;}
+.card-date{font-family:var(--mono);font-size:0.58rem;color:var(--paper-faint);letter-spacing:0.04em;}
+.card-gender{font-family:var(--mono);font-size:0.6rem;color:var(--paper-faint);text-transform:capitalize;}
+
+/* empty state */
+.empty-state{text-align:center;padding:5rem 2rem;animation:fadeUp 0.5s ease both;}
+.empty-icon{font-size:4rem;margin-bottom:1.2rem;opacity:0.3;}
+.empty-title{font-family:var(--display);font-size:1.6rem;font-weight:700;margin-bottom:0.6rem;}
+.empty-sub{font-size:0.92rem;color:var(--paper-dim);margin-bottom:2rem;}
+.btn-cta{display:inline-flex;align-items:center;gap:0.5rem;padding:0.9rem 2rem;border:none;border-radius:12px;background:linear-gradient(135deg,var(--paper),#e8dcc8);color:var(--ink);font-family:var(--body);font-size:0.95rem;font-weight:700;text-decoration:none;cursor:pointer;transition:all 0.2s;}
+.btn-cta:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(227,97,63,0.2);}
+
+.outfit-count{font-family:var(--mono);font-size:0.7rem;color:var(--paper-faint);margin-bottom:1.5rem;letter-spacing:0.04em;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+@media(max-width:600px){
+  .navbar{padding:0.8rem 1rem;}
+  .page{padding:2rem 1rem 4rem;}
+  .wardrobe-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="glow-top"></div>
+
+<nav class="navbar">
+  <a class="logo" href="/"><span class="logo-mark">DD</span><span class="logo-text">Daily Drape</span></a>
+  <div class="nav-right">
+    <a href="/favorites" class="nav-pill active">❤ Wardrobe</a>
+    <a href="/feedback-page" class="nav-pill">Feedback</a>
+    <a href="/" class="nav-pill">New Look</a>
+    <a href="/logout" class="nav-pill logout">Sign out</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <div class="page-kicker">❤ Saved Looks</div>
+    <h1 class="page-title">Your <em>wardrobe</em></h1>
+    <p class="page-sub">Every outfit you've fallen in love with, saved for when you need it.</p>
+  </div>
+
+  {% if outfits %}
+    <div class="outfit-count">{{ outfits | length }} saved look{% if outfits | length != 1 %}s{% endif %}</div>
+    <div class="wardrobe-grid">
+      {% for outfit in outfits %}
+      <div class="outfit-card" style="animation-delay:{{ loop.index0 * 0.06 }}s">
+        <div class="card-header">
+          <div class="card-badges">
+            <span class="badge occasion">{{ outfit.occasion }}</span>
+            <span class="badge weather">{{ outfit.weather }}</span>
+          </div>
+          <span class="heart-icon">❤</span>
+        </div>
+        <div class="card-pieces">
+          <div class="piece-row">
+            <span class="piece-emoji">👕</span>
+            <div class="piece-info">
+              <div class="piece-type">Top</div>
+              <div class="piece-name">{{ outfit.top }}</div>
+            </div>
+          </div>
+          <div class="piece-row">
+            <span class="piece-emoji">👖</span>
+            <div class="piece-info">
+              <div class="piece-type">Bottom</div>
+              <div class="piece-name {% if outfit.bottom == '–' %}empty{% endif %}">{{ outfit.bottom }}</div>
+            </div>
+          </div>
+          <div class="piece-row">
+            <span class="piece-emoji">👟</span>
+            <div class="piece-info">
+              <div class="piece-type">Shoes</div>
+              <div class="piece-name">{{ outfit.shoes }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-date">
+            {{ outfit.generated_at.strftime('%d %b %Y') if outfit.generated_at else '' }}
+          </span>
+          <span class="card-gender">{{ outfit.gender }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">👗</div>
+      <h2 class="empty-title">Your wardrobe is empty</h2>
+      <p class="empty-sub">Start generating outfits and tap ♡ on the ones you love — they'll appear here.</p>
+      <a href="/" class="btn-cta">✦ Generate My First Look</a>
+    </div>
+  {% endif %}
+</div>
+
+<footer style="position:relative;z-index:1;text-align:center;padding:1.5rem;font-size:0.8rem;color:rgba(245,240,230,0.18);border-top:1px solid rgba(245,240,230,0.1);">
+  Made with 💖 by <strong style="color:rgba(245,240,230,0.4)">Vishwa</strong> · Daily Drape © 2026
+</footer>
+</body>
+</html>
