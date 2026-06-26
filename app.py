@@ -364,7 +364,7 @@ def send_otp():
                 )
                 mail.send(msg)
                 print("✅ Email sent successfully!")
-            except Exception as e:
+           except Exception as e:
     import traceback
     print(f"❌ Email failed: {e}")
     traceback.print_exc()
