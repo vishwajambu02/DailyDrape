@@ -365,7 +365,9 @@ def send_otp():
                 mail.send(msg)
                 print("✅ Email sent successfully!")
             except Exception as e:
-                print(f"❌ Email failed: {e}")
+    import traceback
+    print(f"❌ Email failed: {e}")
+    traceback.print_exc()
 
     thread = threading.Thread(
         target=send_async_email,
