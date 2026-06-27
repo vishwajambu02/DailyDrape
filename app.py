@@ -26,13 +26,13 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 280,
 }
 
-# Flask-Mail
-app.config['MAIL_SERVER'] = 'smtp-relay.brevo.com'
+# Flask-Mail (Brevo)
+app.config['MAIL_SERVER']         = 'smtp-relay.brevo.com'
 app.config['MAIL_PORT']           = 587
 app.config['MAIL_USE_TLS']        = True
 app.config['MAIL_USE_SSL']        = False
 app.config['MAIL_USERNAME']       = os.environ.get('MAIL_USERNAME')
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+app.config['MAIL_PASSWORD']       = os.environ.get('MAIL_PASSWORD')
 app.config['MAIL_DEFAULT_SENDER'] = ('Daily Drape', os.environ.get('MAIL_USERNAME'))
 
 # Outfit image upload config
@@ -43,6 +43,12 @@ os.makedirs(OUTFIT_IMG_FOLDER, exist_ok=True)
 
 db.init_app(app)
 mail = Mail(app)
+
+# ── Startup env-var debug (safe — only shows True/False, not values) ──
+print(f"[STARTUP] MAIL_USERNAME set: {bool(os.environ.get('MAIL_USERNAME'))}", flush=True)
+print(f"[STARTUP] MAIL_PASSWORD set: {bool(os.environ.get('MAIL_PASSWORD'))}", flush=True)
+print(f"[STARTUP] MAIL_SERVER: {app.config['MAIL_SERVER']}", flush=True)
+print(f"[STARTUP] MAIL_PORT: {app.config['MAIL_PORT']}", flush=True)
 
 ADMIN_SECRET = os.environ.get("ADMIN_SECRET", "dailydrape-admin-2024")
 
@@ -186,7 +192,7 @@ def login():
     return render_template("login.html", avg_rating=avg_rating, total_outfits=total_outfits)
 
 
-# ── SIGN UP (new route) ───────────────────────
+# ── SIGN UP ───────────────────────────────────
 @app.route("/signup", methods=["POST"])
 def signup():
     name     = request.form.get("name",             "").strip()
@@ -195,7 +201,6 @@ def signup():
     password = request.form.get("password",         "")
     confirm  = request.form.get("confirm_password", "")
 
-    # ── basic validation ──
     if not name:
         flash("Please enter your name.", "error")
         return redirect(url_for("login") + "?tab=signup")
@@ -212,13 +217,11 @@ def signup():
         flash("Passwords do not match.", "error")
         return redirect(url_for("login") + "?tab=signup")
 
-    # ── check duplicate email ──
     existing = User.query.filter_by(email=email).first()
     if existing:
         flash("An account with that email already exists. Sign in instead.", "warning")
         return redirect(url_for("login") + "?tab=signin")
 
-    # ── create user ──
     user = User(
         name=name,
         phone=phone,
@@ -227,7 +230,7 @@ def signup():
     )
     user.set_password(password)
     db.session.add(user)
-    db.session.flush()   # get user.id before commit
+    db.session.flush()
 
     user.last_login_at = now_utc()
     db.session.add(LoginLog(
@@ -240,7 +243,6 @@ def signup():
     ))
     db.session.commit()
 
-    # clear everything first, then log in directly — no OTP needed
     session.clear()
     session["user_id"] = user.id
     flash(f"Welcome to Daily Drape, {name}! 🎉", "success")
@@ -255,17 +257,14 @@ def login_password():
 
     user = User.query.filter_by(email=email).first()
 
-    # user doesn't exist at all
     if not user:
         flash("No account found with that email. Create one in the Sign Up tab.", "error")
         return redirect(url_for("login") + "?tab=signin")
 
-    # user exists but never set a password
     if not user.password_hash:
         flash("You haven't set a password yet. Sign in with Email OTP, then set one from your home screen.", "warning")
         return redirect(url_for("login") + "?tab=otp")
 
-    # wrong password
     if not user.check_password(password):
         db.session.add(LoginLog(
             user_id=user.id, ip_address=get_client_ip(),
@@ -276,7 +275,6 @@ def login_password():
         flash("Incorrect password. Try again or use Email OTP.", "error")
         return redirect(url_for("login") + "?tab=signin")
 
-    # success — clear any stale OTP session, then log in
     user.last_login_at = now_utc()
     db.session.add(LoginLog(
         user_id=user.id, ip_address=get_client_ip(),
@@ -336,40 +334,57 @@ def set_username():
     return redirect(url_for("index"))
 
 
+# ── SEND OTP ──────────────────────────────────
 @app.route("/send-otp", methods=["POST"])
 def send_otp():
     import threading
     import traceback
+
     email = request.form.get("email", "").strip().lower()
     if not email:
         flash("Please enter a valid email.", "error")
         return redirect(url_for("login"))
+
     otp = generate_otp()
     exp = now_utc() + timedelta(minutes=10)
     session["otp_email"]   = email
     session["otp_code"]    = otp
     session["otp_expires"] = exp.isoformat()
-    print(f"\n{'='*40}\n  OTP for {email}  -->  {otp}\n{'='*40}\n")
+
+    print(f"\n{'='*40}", flush=True)
+    print(f"  OTP for {email}  -->  {otp}", flush=True)
+    print(f"{'='*40}\n", flush=True)
+
     def send_async_email(to_email, otp_code):
-        print("Thread started")
+        print("[EMAIL] Thread started", flush=True)
         try:
             with app.app_context():
-                print("Sending email...")
+                print(f"[EMAIL] Connecting to {app.config['MAIL_SERVER']}:{app.config['MAIL_PORT']}...", flush=True)
+                print(f"[EMAIL] Using username: {app.config['MAIL_USERNAME']}", flush=True)
                 msg = Message(
                     subject="Your Daily Drape OTP",
                     recipients=[to_email],
-                    body=f"Hi,\n\nYour Daily Drape OTP is: {otp_code}\n\nValid for 10 minutes.\n\n- Daily Drape Team"
+                    body=(
+                        f"Hi,\n\n"
+                        f"Your Daily Drape OTP is: {otp_code}\n\n"
+                        f"Valid for 10 minutes.\n\n"
+                        f"- Daily Drape Team"
+                    )
                 )
                 mail.send(msg)
-                print("Email sent successfully!")
+                print("[EMAIL] ✅ Email sent successfully!", flush=True)
         except Exception as e:
-            print(f"Email failed: {e}")
+            print(f"[EMAIL] ❌ Email failed: {type(e).__name__}: {e}", flush=True)
             traceback.print_exc()
+
     thread = threading.Thread(target=send_async_email, args=(email, otp))
     thread.daemon = False
     thread.start()
+    print(f"[EMAIL] Thread launched for {email}", flush=True)
+
     dev_otp = otp if app.debug else None
     return render_template("verify.html", dev_otp=dev_otp)
+
 
 # ── OTP VERIFY ────────────────────────────────
 @app.route("/verify-otp", methods=["GET"])
@@ -405,7 +420,6 @@ def verify_otp():
         flash("Incorrect OTP.", "error")
         return redirect(url_for("verify_otp_page"))
 
-    # correct OTP — create user if first time
     user = User.query.filter_by(email=email).first()
     if not user:
         user = User(email=email, created_at=now_utc())
@@ -427,7 +441,7 @@ def verify_otp():
     return redirect(url_for("index"))
 
 
-# ── LOGOUT ───────────────────────────────────
+# ── LOGOUT ────────────────────────────────────
 @app.route("/logout")
 def logout():
     user = current_user()
@@ -454,9 +468,8 @@ def index():
     has_password = bool(user.password_hash)
     has_username = bool(user.name)
 
-    # ── live stats ──
-    avg_rating   = db.session.query(func.avg(Feedback.rating)).scalar()
-    avg_rating   = round(avg_rating, 1) if avg_rating else 0.0
+    avg_rating    = db.session.query(func.avg(Feedback.rating)).scalar()
+    avg_rating    = round(avg_rating, 1) if avg_rating else 0.0
     total_outfits = Outfit.query.count()
     total_users   = User.query.count()
 
@@ -467,6 +480,7 @@ def index():
                            avg_rating=avg_rating,
                            total_outfits=total_outfits,
                            total_users=total_users)
+
 
 @app.route("/result", methods=["POST"])
 @login_required
