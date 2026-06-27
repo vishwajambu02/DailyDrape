@@ -375,7 +375,7 @@ def send_otp():
     thread.daemon = False
     print(f"DEBUG: MAIL_USERNAME={app.config.get('MAIL_USERNAME')}, MAIL_PASSWORD set={bool(app.config.get('MAIL_PASSWORD'))}")
     thread.start()
-    dev_otp = otp if app.debug else None
+    dev_otp = otp
     return render_template("verify.html", dev_otp=dev_otp)
 
 # ── OTP VERIFY ────────────────────────────────
