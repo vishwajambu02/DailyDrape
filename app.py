@@ -357,6 +357,7 @@ def send_otp():
 
     def send_async_email(to_email, otp_code):
         print("[EMAIL] Thread started", flush=True)
+        print(f"[EMAIL] Password length: {len(app.config['MAIL_PASSWORD'] or '')}", flush=True)
         try:
             with app.app_context():
                 print(f"[EMAIL] Connecting to {app.config['MAIL_SERVER']}:{app.config['MAIL_PORT']}...", flush=True)
