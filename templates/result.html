@@ -366,12 +366,15 @@ function submitFeedback(){
   fd.append('phone', document.getElementById('fbPhone').value);
   fd.append('comments', document.getElementById('fbComments').value);
 
-  fetch('/feedback',{method:'POST',body:fd})
+ fetch('/feedback',{method:'POST',body:fd})
     .then(r=>r.json())
     .then(d=>{
       if(d.success){
         document.getElementById('feedbackSuccess').style.display = 'block';
         document.querySelector('.btn-feedback').style.display = 'none';
+        setTimeout(function(){
+          window.location.href = '/';
+        }, 1500);
       }
     });
 }
