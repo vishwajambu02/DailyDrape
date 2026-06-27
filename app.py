@@ -532,30 +532,17 @@ def favorites():
 
 
 # ──────────────────────────────────────────────
-# FEEDBACK PAGE
+# FEEDBACK PAGE  (renders the feedback.html list view)
 # ──────────────────────────────────────────────
-@app.route("/feedback", methods=["POST"])
-def feedback():
-    user      = current_user()
-    outfit_id = request.form.get("outfit_id", type=int)
-    rating    = request.form.get("rating",    type=int)
-    name      = request.form.get("name",      "").strip()
-    phone     = request.form.get("phone",     "").strip() or None
-    comments  = request.form.get("comments",  "").strip() or None
-
-    if not outfit_id or not rating or not (1 <= rating <= 5):
-        return jsonify({"error": "Invalid data"}), 400
-
-    db.session.add(Feedback(
-        outfit_id=outfit_id,
-        user_id=user.id if user else None,
-        name=name or None, phone=phone,
-        rating=rating, comments=comments,
-        submitted_at=now_utc()
-    ))
-    db.session.commit()
-    flash("Thanks for your feedback! 🎉", "success")
-    return redirect(url_for("index"))
+@app.route("/feedback-page")
+@login_required
+def feedback_page():
+    user = current_user()
+    feedbacks = (Feedback.query
+                 .filter_by(user_id=user.id)
+                 .order_by(Feedback.submitted_at.desc())
+                 .all())
+    return render_template("feedback.html", feedbacks=feedbacks)
 
 
 # ──────────────────────────────────────────────
