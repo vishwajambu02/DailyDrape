@@ -372,7 +372,7 @@ def send_otp():
         target=send_async_email,
         args=(app.app_context(), email, otp)
     )
-    thread.daemon = True
+    thread.daemon = False
     thread.start()
 
     dev_otp = otp if app.debug else None
