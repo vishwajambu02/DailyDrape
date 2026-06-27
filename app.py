@@ -1,4 +1,4 @@
-import os, random, string, urllib.parse
+import os, random, string, urllib.parse, requests as http_requests
 from dotenv import load_dotenv
 load_dotenv()
 from datetime import datetime, timezone, timedelta
@@ -7,7 +7,6 @@ from sqlalchemy import func
 from werkzeug.utils import secure_filename
 from flask import (Flask, render_template, request, redirect,
                    url_for, session, jsonify, flash)
-from flask_mail import Mail, Message
 from models import db, User, LoginLog, Outfit, OutfitLike, Feedback, AlternativeClick
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -26,13 +25,10 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 280,
 }
 
-app.config['MAIL_SERVER']         = 'smtp-relay.brevo.com'
-app.config['MAIL_PORT']           = 465
-app.config['MAIL_USE_TLS']        = False
-app.config['MAIL_USE_SSL']        = True
-app.config['MAIL_USERNAME']       = os.environ.get('MAIL_USERNAME')
-app.config['MAIL_PASSWORD']       = os.environ.get('MAIL_PASSWORD')
-app.config['MAIL_DEFAULT_SENDER'] = ('Daily Drape', os.environ.get('MAIL_USERNAME'))
+# Brevo HTTP API (no SMTP — works on Render free tier)
+BREVO_API_KEY    = os.environ.get("BREVO_API_KEY")
+BREVO_SENDER_EMAIL = os.environ.get("MAIL_USERNAME", "vishwajambu66@gmail.com")
+BREVO_SENDER_NAME  = "Daily Drape"
 
 # Outfit image upload config
 OUTFIT_IMG_FOLDER = os.path.join("static", "outfits")
@@ -41,13 +37,10 @@ MAX_PHOTO_SLOTS = 3
 os.makedirs(OUTFIT_IMG_FOLDER, exist_ok=True)
 
 db.init_app(app)
-mail = Mail(app)
 
-# ── Startup env-var debug (safe — only shows True/False, not values) ──
-print(f"[STARTUP] MAIL_USERNAME set: {bool(os.environ.get('MAIL_USERNAME'))}", flush=True)
-print(f"[STARTUP] MAIL_PASSWORD set: {bool(os.environ.get('MAIL_PASSWORD'))}", flush=True)
-print(f"[STARTUP] MAIL_SERVER: {app.config['MAIL_SERVER']}", flush=True)
-print(f"[STARTUP] MAIL_PORT: {app.config['MAIL_PORT']}", flush=True)
+# ── Startup env-var debug ──
+print(f"[STARTUP] BREVO_API_KEY set: {bool(BREVO_API_KEY)}", flush=True)
+print(f"[STARTUP] BREVO_SENDER_EMAIL: {BREVO_SENDER_EMAIL}", flush=True)
 
 ADMIN_SECRET = os.environ.get("ADMIN_SECRET", "dailydrape-admin-2024")
 
@@ -337,7 +330,6 @@ def set_username():
 @app.route("/send-otp", methods=["POST"])
 def send_otp():
     import threading
-    import traceback
 
     email = request.form.get("email", "").strip().lower()
     if not email:
@@ -357,24 +349,33 @@ def send_otp():
     def send_async_email(to_email, otp_code):
         print("[EMAIL] Thread started", flush=True)
         try:
-            with app.app_context():
-                print(f"[EMAIL] Connecting to {app.config['MAIL_SERVER']}:{app.config['MAIL_PORT']}...", flush=True)
-                print(f"[EMAIL] Password length: {len(app.config['MAIL_PASSWORD'] or '')}", flush=True)
-                msg = Message(
-                    subject="Your Daily Drape OTP",
-                    recipients=[to_email],
-                    body=(
+            print(f"[EMAIL] Sending via Brevo HTTP API to {to_email}", flush=True)
+            response = http_requests.post(
+                "https://api.brevo.com/v3/smtp/email",
+                headers={
+                    "api-key": BREVO_API_KEY,
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "sender": {"name": BREVO_SENDER_NAME, "email": BREVO_SENDER_EMAIL},
+                    "to": [{"email": to_email}],
+                    "subject": "Your Daily Drape OTP",
+                    "textContent": (
                         f"Hi,\n\n"
                         f"Your Daily Drape OTP is: {otp_code}\n\n"
                         f"Valid for 10 minutes.\n\n"
                         f"- Daily Drape Team"
                     )
-                )
-                mail.send(msg)
-                print("[EMAIL] Email sent successfully!", flush=True)
+                },
+                timeout=15
+            )
+            print(f"[EMAIL] Status: {response.status_code}", flush=True)
+            if response.status_code == 201:
+                print("[EMAIL] ✅ Email sent successfully!", flush=True)
+            else:
+                print(f"[EMAIL] ❌ Failed: {response.text}", flush=True)
         except Exception as e:
-            print(f"[EMAIL] Email failed: {type(e).__name__}: {e}", flush=True)
-            traceback.print_exc()
+            print(f"[EMAIL] ❌ Exception: {type(e).__name__}: {e}", flush=True)
 
     thread = threading.Thread(target=send_async_email, args=(email, otp))
     thread.daemon = False
