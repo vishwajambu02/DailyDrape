@@ -354,38 +354,35 @@ def send_otp():
     print(f"  OTP for {email}  -->  {otp}", flush=True)
     print(f"{'='*40}\n", flush=True)
 
-   def send_async_email(to_email, otp_code):
-    import requests as req
-    print("[EMAIL] Thread started", flush=True)
-    try:
-        api_key = os.environ.get("BREVO_API_KEY")
-        print(f"[EMAIL] API key set: {bool(api_key)}", flush=True)
-        response = req.post(
-            "https://api.brevo.com/v3/smtp/email",
-            headers={
-                "api-key": api_key,
-                "Content-Type": "application/json"
-            },
-            json={
-                "sender": {"name": "Daily Drape", "email": "vishwajambu66@gmail.com"},
-                "to": [{"email": to_email}],
-                "subject": "Your Daily Drape OTP",
-                "textContent": (
-                    f"Hi,\n\n"
-                    f"Your Daily Drape OTP is: {otp_code}\n\n"
-                    f"Valid for 10 minutes.\n\n"
-                    f"- Daily Drape Team"
+    def send_async_email(to_email, otp_code):
+        print("[EMAIL] Thread started", flush=True)
+        try:
+            with app.app_context():
+                print(f"[EMAIL] Connecting to {app.config['MAIL_SERVER']}:{app.config['MAIL_PORT']}...", flush=True)
+                print(f"[EMAIL] Password length: {len(app.config['MAIL_PASSWORD'] or '')}", flush=True)
+                msg = Message(
+                    subject="Your Daily Drape OTP",
+                    recipients=[to_email],
+                    body=(
+                        f"Hi,\n\n"
+                        f"Your Daily Drape OTP is: {otp_code}\n\n"
+                        f"Valid for 10 minutes.\n\n"
+                        f"- Daily Drape Team"
+                    )
                 )
-            }
-        )
-        print(f"[EMAIL] Status: {response.status_code}", flush=True)
-        print(f"[EMAIL] Response: {response.text}", flush=True)
-        if response.status_code == 201:
-            print("[EMAIL] ✅ Email sent successfully!", flush=True)
-        else:
-            print(f"[EMAIL] ❌ Failed: {response.text}", flush=True)
-    except Exception as e:
-        print(f"[EMAIL] ❌ Exception: {e}", flush=True)
+                mail.send(msg)
+                print("[EMAIL] Email sent successfully!", flush=True)
+        except Exception as e:
+            print(f"[EMAIL] Email failed: {type(e).__name__}: {e}", flush=True)
+            traceback.print_exc()
+
+    thread = threading.Thread(target=send_async_email, args=(email, otp))
+    thread.daemon = False
+    thread.start()
+    print(f"[EMAIL] Thread launched for {email}", flush=True)
+
+    dev_otp = otp if app.debug else None
+    return render_template("verify.html", dev_otp=dev_otp)
 
 
 # ── OTP VERIFY ────────────────────────────────
