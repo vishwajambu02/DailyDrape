@@ -39,7 +39,7 @@ os.makedirs(OUTFIT_IMG_FOLDER, exist_ok=True)
 db.init_app(app)
 
 # ── Startup env-var debug ──
-print(f"[STARTUP] BREVO_API_KEY set: True
+print(f"[STARTUP] BREVO_API_KEY set: {bool(BREVO_API_KEY)}", flush=True)
 print(f"[STARTUP] BREVO_SENDER_EMAIL: {BREVO_SENDER_EMAIL}", flush=True)
 
 ADMIN_SECRET = os.environ.get("ADMIN_SECRET", "dailydrape-admin-2024")
