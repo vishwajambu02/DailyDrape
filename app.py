@@ -339,6 +339,7 @@ def set_username():
 @app.route("/send-otp", methods=["POST"])
 def send_otp():
     import threading
+    import traceback
     email = request.form.get("email", "").strip().lower()
     if not email:
         flash("Please enter a valid email.", "error")
@@ -349,23 +350,26 @@ def send_otp():
     session["otp_code"]    = otp
     session["otp_expires"] = exp.isoformat()
     print(f"\n{'='*40}\n  OTP for {email}  -->  {otp}\n{'='*40}\n")
-
     def send_async_email(to_email, otp_code):
-    print("🧵 Thread started")
-    try:
-        with app.app_context():
-            print("📧 Sending email...")
-            msg = Message(
-                subject="Your Daily Drape OTP",
-                recipients=[to_email],
-                body=f"Hi,\n\nYour Daily Drape OTP is: {otp_code}\n\nValid for 10 minutes.\n\n– Daily Drape Team"
-            )
-            mail.send(msg)
-            print("✅ Email sent successfully!")
-    except Exception as e:
-        import traceback
-        print(f"❌ Thread crashed: {e}")
-        traceback.print_exc()
+        print("Thread started")
+        try:
+            with app.app_context():
+                print("Sending email...")
+                msg = Message(
+                    subject="Your Daily Drape OTP",
+                    recipients=[to_email],
+                    body=f"Hi,\n\nYour Daily Drape OTP is: {otp_code}\n\nValid for 10 minutes.\n\n- Daily Drape Team"
+                )
+                mail.send(msg)
+                print("Email sent successfully!")
+        except Exception as e:
+            print(f"Email failed: {e}")
+            traceback.print_exc()
+    thread = threading.Thread(target=send_async_email, args=(email, otp))
+    thread.daemon = False
+    thread.start()
+    dev_otp = otp if app.debug else None
+    return render_template("verify.html", dev_otp=dev_otp)
 
 # ── OTP VERIFY ────────────────────────────────
 @app.route("/verify-otp", methods=["GET"])
