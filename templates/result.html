@@ -369,12 +369,10 @@ function submitFeedback(){
  fetch('/feedback',{method:'POST',body:fd})
     .then(r=>r.json())
     .then(d=>{
-      if(d.success){
+if(d.success){
         document.getElementById('feedbackSuccess').style.display = 'block';
         document.querySelector('.btn-feedback').style.display = 'none';
-        setTimeout(function(){
-          window.location.href = '/';
-        }, 1500);
+        setTimeout(function(){ window.location.href = '/'; }, 1500);
       }
     });
 }
